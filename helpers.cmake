@@ -17,7 +17,7 @@ function(config_str config_name description)
         PARSE_ARGV
         2
         "CONFIG_STR"
-        "HIDE_DISABLED;EXPORT"
+        "HIDE_DISABLED;EXPORT;UNQUOTE"
         "DEFAULT;DEPENDS"
         ""
     )
@@ -26,6 +26,12 @@ function(config_str config_name description)
     endif()
     if ("${CONFIG_STR_DEFAULT}" STREQUAL "")
         message(FATAL_ERROR "No default value passed")
+    endif()
+
+    if(CONFIG_STR_UNQUOTE)
+        set(quote "")
+    else()
+        set(quote "\"")
     endif()
 
     # Check that the configs dependencies are enabled before setting it to a visible enabled state
@@ -39,25 +45,26 @@ function(config_str config_name description)
         endforeach()
     endif()
 
+    set(default_value "${CONFIG_STR_DEFAULT}")
     if(enabled)
         # We want to ensure we capture a transition for a disabled to enabled state when dependencies are met
         if(${config_name}_DISABLED)
             unset(${config_name}_DISABLED CACHE)
-            set(${config_name} ${CONFIG_STR_DEFAULT} CACHE STRING "${description}" FORCE)
+            set(${config_name} ${default_value} CACHE STRING "${description}" FORCE)
         else()
-            set(${config_name} ${CONFIG_STR_DEFAULT} CACHE STRING "${description}")
+            set(${config_name} ${default_value} CACHE STRING "${description}")
         endif()
     else()
         if(CONFIG_STR_HIDE_DISABLED)
             unset(${config_name} CACHE)
         else()
-            set(${config_name} "${CONFIG_STR_DEFAULT}" CACHE INTERNAL "" FORCE)
+            set(${config_name} "${default_value}" CACHE INTERNAL "" FORCE)
             set(${config_name}_DISABLED ON CACHE INTERNAL "" FORCE)
         endif()
     endif()
     if(CONFIG_STR_EXPORT AND NOT CONFIG_STR_HIDE_DISABLED)
         set(new_exported_configs "${exported_configs}")
-        list(APPEND new_exported_configs "#define ${config_name} \"${${config_name}}\"")
+        list(APPEND new_exported_configs "#define ${config_name} ${quote}${${config_name}}${quote}")
         set(exported_configs "${new_exported_configs}" PARENT_SCOPE)
     endif()
 endfunction(config_str)
@@ -67,7 +74,7 @@ function(config_choice config_name description)
         PARSE_ARGV
         2
         "CONFIG_OPT"
-        "DEFAULT_NONE;EXPORT"
+        "DEFAULT_NONE;EXPORT;UNQUOTE;EXPORT_OPTIONS"
         ""
         "OPTIONS"
     )
@@ -78,7 +85,13 @@ function(config_choice config_name description)
     if ("${CONFIG_OPT_OPTIONS}" STREQUAL "")
         message(FATAL_ERROR "No options passed")
     endif()
-    
+
+    if(CONFIG_OPT_UNQUOTE)
+        set(quote "")
+    else()
+        set(quote "\"")
+    endif()
+
     set(new_exported_configs "${exported_configs}")
     set(found_option ON)
     set(found_pre_set OFF)
@@ -112,9 +125,12 @@ function(config_choice config_name description)
             if("${${config_name}}" STREQUAL "${option_config_field}")
                 set(${option_config_var} ON CACHE INTERNAL "" FORCE)
                 set(found_pre_set ON)
-                if(CONFIG_OPT_EXPORT)
+                set(found_option OFF)
+                if(CONFIG_OPT_EXPORT_OPTIONS)
                     list(APPEND new_exported_configs "#define ${option_config_var} 1")
                 endif()
+                set(default_config_field "${option_config_field}")
+                set(default_config_var "${option_config_var}")
             else()
                 # Clear the cache of the current set value
                 set(${option_config_var} OFF CACHE INTERNAL "" FORCE)
@@ -127,7 +143,7 @@ function(config_choice config_name description)
     if(NOT ${CONFIG_OPT_DEFAULT_NONE})
         if(NOT found_pre_set)
             set(${default_config_var} ON CACHE INTERNAL "" FORCE)
-            if(CONFIG_OPT_EXPORT)
+            if(CONFIG_OPT_EXPORT_OPTIONS)
                 list(APPEND new_exported_configs "#define ${default_config_var} 1")
             endif()
             set(${config_name} ${default_config_field} CACHE STRING ${description})
@@ -135,7 +151,7 @@ function(config_choice config_name description)
         set_property(CACHE ${config_name} PROPERTY STRINGS ${all_option_config_fields})
 
         if(CONFIG_OPT_EXPORT)
-            list(APPEND new_exported_configs "#define ${config_name} \"${${config_name}}\"")
+            list(APPEND new_exported_configs "#define ${config_name} ${quote}${default_config_var}${quote}")
         endif()
     endif()
     set(exported_configs "${new_exported_configs}" PARENT_SCOPE)

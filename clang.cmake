@@ -34,6 +34,12 @@ string(APPEND clang_base_c_flags " -Wno-padded")
 string(APPEND clang_base_c_flags " -Wno-reserved-id-macro")
 string(APPEND clang_base_c_flags " -Wno-zero-length-array")
 
+string(APPEND clang_base_c_flags " -Wno-cast-qual")
+string(APPEND clang_base_c_flags " -Wno-thread-safety-analysis")
+string(APPEND clang_base_c_flags " -Wno-disabled-macro-expansion")
+string(APPEND clang_base_c_flags " -Wno-extra-semi-stmt")
+string(APPEND clang_base_c_flags " -Wno-unknown-warning-option")
+
 set(CMAKE_C_FLAGS "${clang_base_c_flags}" CACHE STRING "" FORCE)
 
 find_program(CCACHE_FOUND ccache)

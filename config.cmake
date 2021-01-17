@@ -44,6 +44,7 @@ config_str(
     "WiredTiger buffer boundary aligment"
     DEFAULT 0
     EXPORT
+    UNQUOTE
 )
 
 config_bool(
@@ -106,8 +107,8 @@ config_choice(
         "msvc;SPINLOCK_MSVC;WTWin"
         "pthread;SPINLOCK_PTHREAD_MUTEX;"
         "pthread_adaptive;SPINLOCK_PTHREAD_ADAPTIVE;"
-    DEFAULT_NONE
     EXPORT
+    UNQUOTE
 )
 
 config_str(
