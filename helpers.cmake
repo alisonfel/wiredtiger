@@ -17,7 +17,7 @@ function(config_str config_name description)
         PARSE_ARGV
         2
         "CONFIG_STR"
-        "HIDE_DISABLED"
+        "HIDE_DISABLED;EXPORT"
         "DEFAULT;DEPENDS"
         ""
     )
@@ -48,12 +48,17 @@ function(config_str config_name description)
             set(${config_name} ${CONFIG_STR_DEFAULT} CACHE STRING "${description}")
         endif()
     else()
-        if(${CONFIG_STR_HIDE_DISABLED})
+        if(CONFIG_STR_HIDE_DISABLED)
             unset(${config_name} CACHE)
         else()
             set(${config_name} "${CONFIG_STR_DEFAULT}" CACHE INTERNAL "" FORCE)
             set(${config_name}_DISABLED ON CACHE INTERNAL "" FORCE)
         endif()
+    endif()
+    if(CONFIG_STR_EXPORT AND NOT CONFIG_STR_HIDE_DISABLED)
+        set(new_exported_configs "${exported_configs}")
+        list(APPEND new_exported_configs "#define ${config_name} \"${${config_name}}\"")
+        set(exported_configs "${new_exported_configs}" PARENT_SCOPE)
     endif()
 endfunction(config_str)
 
@@ -62,7 +67,7 @@ function(config_choice config_name description)
         PARSE_ARGV
         2
         "CONFIG_OPT"
-        "DEFAULT_NONE"
+        "DEFAULT_NONE;EXPORT"
         ""
         "OPTIONS"
     )
@@ -73,7 +78,8 @@ function(config_choice config_name description)
     if ("${CONFIG_OPT_OPTIONS}" STREQUAL "")
         message(FATAL_ERROR "No options passed")
     endif()
-
+    
+    set(new_exported_configs "${exported_configs}")
     set(found_option ON)
     set(found_pre_set OFF)
     set(default_config_field "")
@@ -106,6 +112,9 @@ function(config_choice config_name description)
             if("${${config_name}}" STREQUAL "${option_config_field}")
                 set(${option_config_var} ON CACHE INTERNAL "" FORCE)
                 set(found_pre_set ON)
+                if(CONFIG_OPT_EXPORT)
+                    list(APPEND new_exported_configs "#define ${option_config_var} 1")
+                endif()
             else()
                 # Clear the cache of the current set value
                 set(${option_config_var} OFF CACHE INTERNAL "" FORCE)
@@ -118,10 +127,18 @@ function(config_choice config_name description)
     if(NOT ${CONFIG_OPT_DEFAULT_NONE})
         if(NOT found_pre_set)
             set(${default_config_var} ON CACHE INTERNAL "" FORCE)
+            if(CONFIG_OPT_EXPORT)
+                list(APPEND new_exported_configs "#define ${default_config_var} 1")
+            endif()
+            set(${config_name} ${default_config_field} CACHE STRING ${description})
         endif()
-        set(${config_name} ${default_config_field} CACHE STRING ${description})
         set_property(CACHE ${config_name} PROPERTY STRINGS ${all_option_config_fields})
+
+        if(CONFIG_OPT_EXPORT)
+            list(APPEND new_exported_configs "#define ${config_name} \"${${config_name}}\"")
+        endif()
     endif()
+    set(exported_configs "${new_exported_configs}" PARENT_SCOPE)
 endfunction()
 
 
@@ -130,7 +147,7 @@ function(config_bool config_name description)
         PARSE_ARGV
         2
         "CONFIG_BOOL"
-        ""
+        "EXPORT"
         "DEFAULT;DEPENDS"
         ""
     )
@@ -165,6 +182,11 @@ function(config_bool config_name description)
         set(${config_name} OFF CACHE INTERNAL "" FORCE)
         set(${config_name}_DISABLED ON CACHE INTERNAL "" FORCE)
     endif()
+    if(CONFIG_BOOL_EXPORT)
+        set(new_exported_configs "${exported_configs}")
+        list(APPEND new_exported_configs "#define ${config_name} ${${config_name}}")
+        set(exported_configs "${new_exported_configs}" PARENT_SCOPE)
+    endif()
 endfunction()
 
 
@@ -173,7 +195,7 @@ function(config_func config_name description)
         PARSE_ARGV
         2
         "CONFIG_FUNC"
-        ""
+        "EXPORT"
         "FUNC;DEPENDS;FILES;LINK_OPTIONS"
         ""
     )
@@ -215,6 +237,11 @@ function(config_func config_name description)
         set(${config_name} 0 CACHE INTERNAL "" FORCE)
         set(${config_name}_DISABLED ON CACHE INTERNAL "" FORCE)
     endif()
+    if(CONFIG_FUNC_EXPORT)
+        set(new_exported_configs "${exported_configs}")
+        list(APPEND new_exported_configs "#define ${config_name} ${${config_name}}")
+        set(exported_configs "${new_exported_configs}" PARENT_SCOPE)
+    endif()
 endfunction()
 
 function(config_include config_name description)
@@ -222,7 +249,7 @@ function(config_include config_name description)
         PARSE_ARGV
         2
         "CONFIG_INCLUDE"
-        ""
+        "EXPORT"
         "FILE;DEPENDS"
         ""
     )
@@ -257,6 +284,11 @@ function(config_include config_name description)
     else()
         set(${config_name} OFF CACHE INTERNAL "" FORCE)
         set(${config_name}_DISABLED ON CACHE INTERNAL "" FORCE)
+    endif()
+    if(CONFIG_INCLUDE_EXPORT)
+        set(new_exported_configs "${exported_configs}")
+        list(APPEND new_exported_configs "#define ${config_name} ${${config_name}}")
+        set(exported_configs "${new_exported_configs}" PARENT_SCOPE)
     endif()
 endfunction()
 
@@ -315,4 +347,9 @@ function(assert_type_size type size)
         # Type does not meet size assertion
         message(FATAL_ERROR "Type assertion failed: ${type} does not equal size ${size}")
     endif()
+endfunction()
+
+function(create_config_header config_string config_file)
+    string(REPLACE ";" "\n" config_contents "${config_string};")
+    file(GENERATE OUTPUT "${config_file}" CONTENT "${config_contents}")
 endfunction()

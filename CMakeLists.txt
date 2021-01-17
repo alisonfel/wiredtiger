@@ -78,7 +78,9 @@ add_library(wiredtiger ${link_type} ${wt_sources})
 
 # Generate wiredtiger.h
 configure_file(src/include/wiredtiger.in "include/wiredtiger.h" @ONLY)
+create_config_header("${exported_configs_config};${exported_configs_default}" "config/wiredtiger_config.h")
 target_include_directories(
     wiredtiger
     PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/include
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/config ${CMAKE_CURRENT_LIST_DIR}/src/include
 )

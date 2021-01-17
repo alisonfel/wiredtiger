@@ -10,7 +10,7 @@ cmake_minimum_required(VERSION 3.12.0)
 
 include(helpers.cmake)
 
-set(config "${defaults_config}")
+set(exported_configs "")
 
 # WiredTiger config options
 
@@ -40,21 +40,24 @@ config_bool(
 )
 
 config_str(
-    WT_BUFFER_ALIGNMENT
+    WT_BUFFER_ALIGNMENT_DEFAULT
     "WiredTiger buffer boundary aligment"
     DEFAULT 0
+    EXPORT
 )
 
 config_bool(
     HAVE_DIAGNOSTIC
     "Enable WiredTiger diagnostics"
-    DEFAULT ON 
+    DEFAULT ON
+    EXPORT
 )
 
 config_bool(
     HAVE_ATTACH
     ""
     DEFAULT OFF
+    EXPORT
 )
 
 config_bool(
@@ -104,6 +107,7 @@ config_choice(
         "pthread;SPINLOCK_PTHREAD_MUTEX;"
         "pthread_adaptive;SPINLOCK_PTHREAD_ADAPTIVE;"
     DEFAULT_NONE
+    EXPORT
 )
 
 config_str(
@@ -129,3 +133,5 @@ config_str(
     "Version string for WiredTiger"
     DEFAULT "WiredTiger 10.0.0 (Jan 1. 2021)"
 )
+
+set(exported_configs_config "${exported_configs}" CACHE INTERNAL "")

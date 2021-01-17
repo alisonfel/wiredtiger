@@ -8,9 +8,9 @@
 
 cmake_minimum_required(VERSION 3.12.0)
 
-include(helpers.cmake)
+set(exported_configs)
 
-set(defaults_config "")
+include(helpers.cmake)
 
 ### Autoconf compatibility options
 
@@ -60,6 +60,7 @@ config_include(
     HAVE_X86INTRIN_H
     "Include x86intrin.h exists"
     FILE "x86intrin.h"
+    EXPORT
 )
 
 config_func(
@@ -67,6 +68,7 @@ config_func(
     "Function clock_gettime exists"
     FUNC "clock_gettime"
     FILES "time.h"
+    EXPORT
 )
 
 config_func(
@@ -74,6 +76,7 @@ config_func(
     "Function fallocate exists"
     FUNC "fallocate"
     FILES "fcntl.h"
+    EXPORT
 )
 
 config_func(
@@ -82,6 +85,7 @@ config_func(
     FUNC "fdatasync"
     FILES "unistd.h"
     DEPENDS "NOT WT_DARWIN"
+    EXPORT
 )
 
 config_func(
@@ -89,6 +93,7 @@ config_func(
     "Function ftruncate exists"
     FUNC "ftruncate"
     FILES "unistd.h;sys/types.h"
+    EXPORT
 )
 
 config_func(
@@ -96,34 +101,39 @@ config_func(
     "Function gettimeofday exists"
     FUNC "gettimeofday"
     FILES "sys/time.h"
+    EXPORT
 )
 
 config_func(
-    HAVE_FADVISE
+    HAVE_POSIX_FADVISE
     "Function posix_fadvise exists"
     FUNC "posix_fadvise"
     FILES "fcntl.h"
+    EXPORT
 )
 
 config_func(
-    HAVE_FALLOCATE
+    HAVE_POSIX_FALLOCATE
     "Function posix_fallocate exists"
     FUNC "posix_fallocate"
     FILES "fcntl.h"
+    EXPORT
 )
 
 config_func(
-    HAVE_MADVISE
+    HAVE_POSIX_MADVISE
     "Function posix_madvise exists"
     FUNC "posix_madvise"
     FILES "sys/mman.h"
+    EXPORT
 )
 
 config_func(
-    HAVE_MEMALIGN
+    HAVE_POSIX_MEMALIGN
     "Function posix_memalign exists"
     FUNC "posix_memalign"
     FILES "stdlib.h"
+    EXPORT
 )
 
 config_func(
@@ -131,6 +141,7 @@ config_func(
     "Function setrlimit exists"
     FUNC "setrlimit"
     FILES "sys/time.h;sys/resource.h"
+    EXPORT
 )
 
 config_func(
@@ -138,6 +149,7 @@ config_func(
     "Function strtouq exists"
     FUNC "strtouq"
     FILES "stdlib.h"
+    EXPORT
 )
 
 config_func(
@@ -145,6 +157,7 @@ config_func(
     "Function sync_file_range exists"
     FUNC "sync_file_range"
     FILES "fcntl.h"
+    EXPORT
 )
 
 config_func(
@@ -153,4 +166,7 @@ config_func(
     FUNC "timer_create"
     FILES "signal.h;time.h"
     LINK_OPTIONS "-lrt"
+    EXPORT
 )
+
+set(exported_configs_default "${exported_configs}" CACHE INTERNAL "")
