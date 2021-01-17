@@ -8,5 +8,5 @@
 
 cmake_minimum_required(VERSION 3.12.0)
 
-set(WTArch "X86" CACHE STRING "")
-set(WTOS "Windows" CACHE STRING "")
+set(WT_ARCH "X86" CACHE STRING "")
+set(WT_OS "Windows" CACHE STRING "")

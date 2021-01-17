@@ -12,12 +12,12 @@ include(CheckIncludeFiles)
 include(CheckSymbolExists)
 include(CheckTypeSize)
 
-function(config_str option_name config_name description)
+function(config_str config_name description)
     cmake_parse_arguments(
         PARSE_ARGV
-        3
+        2
         "CONFIG_STR"
-        "HIDE_DISABLED;QUOTE_CONFIG"
+        "HIDE_DISABLED"
         "DEFAULT;DEPENDS"
         ""
     )
@@ -26,12 +26,6 @@ function(config_str option_name config_name description)
     endif()
     if ("${CONFIG_STR_DEFAULT}" STREQUAL "")
         message(FATAL_ERROR "No default value passed")
-    endif()
-
-    if(NOT CONFIG_STR_QUOTE_CONFIG)
-        set(quote "")
-    else()
-        set(quote "\"")
     endif()
 
     # Check that the configs dependencies are enabled before setting it to a visible enabled state
@@ -45,33 +39,28 @@ function(config_str option_name config_name description)
         endforeach()
     endif()
 
-    set(new_config ${config})
-
     if(enabled)
         # We want to ensure we capture a transition for a disabled to enabled state when dependencies are met
-        if(${option_name}_DISABLED)
-            unset(${option_name}_DISABLED CACHE)
-            set(${option_name} ${CONFIG_STR_DEFAULT} CACHE STRING "${description}" FORCE)
+        if(${config_name}_DISABLED)
+            unset(${config_name}_DISABLED CACHE)
+            set(${config_name} ${CONFIG_STR_DEFAULT} CACHE STRING "${description}" FORCE)
         else()
-            set(${option_name} ${CONFIG_STR_DEFAULT} CACHE STRING "${description}")
+            set(${config_name} ${CONFIG_STR_DEFAULT} CACHE STRING "${description}")
         endif()
-        list(APPEND new_config "#define ${config_name} ${quote}@${option_name}${quote}")
     else()
         if(${CONFIG_STR_HIDE_DISABLED})
-            unset(${option_name} CACHE)
+            unset(${config_name} CACHE)
         else()
-            set(${option_name} "${CONFIG_STR_DEFAULT}" CACHE INTERNAL "" FORCE)
-            set(${option_name}_DISABLED ON CACHE INTERNAL "" FORCE)
-            list(APPEND new_config "#define ${config_name} ${quote}@${option_name}${quote}")
+            set(${config_name} "${CONFIG_STR_DEFAULT}" CACHE INTERNAL "" FORCE)
+            set(${config_name}_DISABLED ON CACHE INTERNAL "" FORCE)
         endif()
     endif()
-    set(config ${new_config} PARENT_SCOPE)
 endfunction(config_str)
 
-function(config_choice option_name config_name description)
+function(config_choice config_name description)
     cmake_parse_arguments(
         PARSE_ARGV
-        3
+        2
         "CONFIG_OPT"
         "DEFAULT_NONE"
         ""
@@ -85,22 +74,18 @@ function(config_choice option_name config_name description)
         message(FATAL_ERROR "No options passed")
     endif()
 
-    set(new_config ${config})
-
     set(found_option ON)
     set(found_pre_set OFF)
-    set(default_option_field "")
-    set(default_cache_var "")
-    set(default_option_var "")
+    set(default_config_field "")
+    set(default_config_var "")
     foreach(curr_option ${CONFIG_OPT_OPTIONS})
         list(LENGTH curr_option opt_length)
-        if (NOT opt_length EQUAL 4)
+        if (NOT opt_length EQUAL 3)
             message(FATAL_ERROR "Invalid option list")
         endif()
-        list(GET curr_option 0 option_field)
-        list(GET curr_option 1 option_cache_var)
-        list(GET curr_option 2 option_config_var)
-        list(GET curr_depends 3 option_depends)
+        list(GET curr_option 0 option_config_field)
+        list(GET curr_option 1 option_config_var)
+        list(GET curr_depends 2 option_depends)
 
         set(enabled ON)
         if(NOT "${option_depends}" STREQUAL "NOTFOUND")
@@ -110,49 +95,40 @@ function(config_choice option_name config_name description)
         endif()
 
         if(enabled)
-            list(APPEND all_option_fields ${option_field})
+            list(APPEND all_option_config_fields ${option_config_field})
             if (found_option)
                 set(found_option OFF)
-                set(default_option_field "${option_field}")
-                set(default_cache_var "${option_cache_var}")
-                set(default_option_var "${option_config_var}")
+                set(default_config_field "${option_config_field}")
+                set(default_config_var "${option_config_var}")
             endif()
 
             # Check if the option is already set with this given field
-            if("${${option_name}}" STREQUAL "${option_field}")
-                set(${option_cache_var} ON CACHE INTERNAL "" FORCE)
-                list(APPEND new_config "#define ${option_config_var} 1")
+            if("${${config_name}}" STREQUAL "${option_config_field}")
+                set(${option_config_var} ON CACHE INTERNAL "" FORCE)
                 set(found_pre_set ON)
             else()
                 # Clear the cache of the current set value
-                set(${option_cache} OFF CACHE INTERNAL "" FORCE)
+                set(${option_config_var} OFF CACHE INTERNAL "" FORCE)
             endif()
         else()
-            unset(${option_cache} CACHE)
+            unset(${option_config_var} CACHE)
         endif()
     endforeach()
 
     if(NOT ${CONFIG_OPT_DEFAULT_NONE})
         if(NOT found_pre_set)
-            list(APPEND new_config "#define ${config_name} @${option_name}")
-            set(${default_cache_var} ON CACHE INTERNAL "" FORCE)
-            list(APPEND new_config "#define ${default_config_var} 1")
-            set(${option_name} ${default_option_field} CACHE STRING ${description})
-        else()
-            set(${option_name} ${default_option_field} CACHE STRING ${description})
+            set(${default_config_var} ON CACHE INTERNAL "" FORCE)
         endif()
-        set_property(CACHE ${option_name} PROPERTY STRINGS ${all_option_fields})
+        set(${config_name} ${default_config_field} CACHE STRING ${description})
+        set_property(CACHE ${config_name} PROPERTY STRINGS ${all_option_config_fields})
     endif()
-
-    set(${option_name}_all_strings ${all_option_fields} CACHE INTERNAL "" FORCE)
-    set(config ${new_config} PARENT_SCOPE)
 endfunction()
 
 
-function(config_bool option_name config_name description)
+function(config_bool config_name description)
     cmake_parse_arguments(
         PARSE_ARGV
-        3
+        2
         "CONFIG_BOOL"
         ""
         "DEFAULT;DEPENDS"
@@ -167,40 +143,35 @@ function(config_bool option_name config_name description)
     endif()
 
     # Check that the configs dependencies are enabled before setting it to a visible enabled state
-    set(enabled ${CONFIG_BOOL_DEFAULT})
-    if(${CONFIG_BOOL_DEFAULT} AND (NOT "${CONFIG_BOOL_DEPENDS}" STREQUAL ""))
-        foreach(dependency ${CONFIG_STR_DEPENDS})
+    set(enabled ON)
+    if(NOT "${CONFIG_BOOL_DEPENDS}" STREQUAL "")
+        foreach(dependency ${CONFIG_BOOL_DEPENDS})
             string(REGEX REPLACE " " ";" dependency "${dependency}")
-            if(NOT ${dependency})
+            if(NOT (${dependency}))
                 set(enabled OFF)
             endif()
         endforeach()
     endif()
 
-    set(new_config ${config})
-
     if(enabled)
         # We want to ensure we capture a transition for a disabled to enabled state when dependencies are met
-        if(${option_name}_DISABLED)
-            unset(${option_name}_DISABLED CACHE)
-            set(${option_name} ON CACHE STRING "${description}" FORCE)
+        if(${config_name}_DISABLED)
+            unset(${config_name}_DISABLED CACHE)
+            set(${config_name} ${CONFIG_BOOL_DEFAULT} CACHE STRING "${description}" FORCE)
         else()
-            set(${option_name} ON CACHE STRING "${description}")
+            set(${config_name} ${CONFIG_BOOL_DEFAULT} CACHE STRING "${description}")
         endif()
-        list(APPEND new_config "#define ${config_name} 1")
     else()
-        set(${option_name} OFF CACHE INTERNAL "" FORCE)
-        set(${option_name}_DISABLED ON CACHE INTERNAL "" FORCE)
-        list(APPEND new_config "#define ${config_name} 0")
+        set(${config_name} OFF CACHE INTERNAL "" FORCE)
+        set(${config_name}_DISABLED ON CACHE INTERNAL "" FORCE)
     endif()
-    set(config ${new_config} PARENT_SCOPE)
 endfunction()
 
 
-function(config_func option_name config_name description)
+function(config_func config_name description)
     cmake_parse_arguments(
         PARSE_ARGV
-        3
+        2
         "CONFIG_FUNC"
         ""
         "FUNC;DEPENDS;FILES;LINK_OPTIONS"
@@ -229,31 +200,27 @@ function(config_func option_name config_name description)
         endforeach()
     endif()
 
-    set(new_config ${config})
-
     if(enabled)
         set(CMAKE_REQUIRED_LINK_OPTIONS "${CONFIG_FUNC_LINK_OPTIONS}")
-        check_symbol_exists(${CONFIG_FUNC_FUNC} "${CONFIG_FUNC_FILES}" ${config_name})
+        check_symbol_exists(${CONFIG_FUNC_FUNC} "${CONFIG_FUNC_FILES}" has_symbol_${config_name})
         # We want to ensure we capture a transition for a disabled to enabled state when dependencies are met
-        if(${option_name}_DISABLED)
-            unset(${option_name}_DISABLED CACHE)
-            set(${option_name} ${${config_name}} CACHE STRING "${description}" FORCE)
+        if(${config_name}_DISABLED)
+            unset(${config_name}_DISABLED CACHE)
+            set(${config_name} ${has_symbol_${config_name}} CACHE STRING "${description}" FORCE)
         else()
-            set(${option_name} ${${config_name}} CACHE STRING "${description}")
+            set(${config_name} ${has_symbol_${config_name}} CACHE STRING "${description}")
         endif()
-        list(APPEND new_config "#define ${config_name} ${${config_name}}")
+        unset(has_symbol_${config_name} CACHE)
     else()
-        set(${option_name} OFF CACHE INTERNAL "" FORCE)
-        set(${option_name}_DISABLED ON CACHE INTERNAL "" FORCE)
-        list(APPEND new_config "#define ${config_name} 0")
+        set(${config_name} 0 CACHE INTERNAL "" FORCE)
+        set(${config_name}_DISABLED ON CACHE INTERNAL "" FORCE)
     endif()
-    set(config ${new_config} PARENT_SCOPE)
 endfunction()
 
-function(config_include option_name config_name description)
+function(config_include config_name description)
     cmake_parse_arguments(
         PARSE_ARGV
-        3
+        2
         "CONFIG_INCLUDE"
         ""
         "FILE;DEPENDS"
@@ -278,30 +245,25 @@ function(config_include option_name config_name description)
         endforeach()
     endif()
 
-    set(new_config ${config})
-
     if(enabled)
         check_include_files(${CONFIG_INCLUDE_FILE} ${config_name})
         # We want to ensure we capture a transition for a disabled to enabled state when dependencies are met
-        if(${option_name}_DISABLED)
-            unset(${option_name}_DISABLED CACHE)
-            set(${option_name} ${${config_name}} CACHE STRING "${description}" FORCE)
+        if(${config_name}_DISABLED)
+            unset(${config_name}_DISABLED CACHE)
+            set(${config_name} ${${config_name}} CACHE STRING "${description}" FORCE)
         else()
-            set(${option_name} ${${config_name}} CACHE STRING "${description}")
+            set(${config_name} ${${config_name}} CACHE STRING "${description}")
         endif()
-        list(APPEND new_config "#define ${config_name} ${${config_name}}")
     else()
-        set(${option_name} OFF CACHE INTERNAL "" FORCE)
-        set(${option_name}_DISABLED ON CACHE INTERNAL "" FORCE)
-        list(APPEND new_config "#define ${config_name} 0")
+        set(${config_name} OFF CACHE INTERNAL "" FORCE)
+        set(${config_name}_DISABLED ON CACHE INTERNAL "" FORCE)
     endif()
-    set(config ${new_config} PARENT_SCOPE)
 endfunction()
 
 function(test_type_size type output_size)
     cmake_parse_arguments(
         PARSE_ARGV
-        3
+        2
         "TEST_TYPE"
         ""
         ""
@@ -321,14 +283,13 @@ function(test_type_size type output_size)
     else()
         set(${output_size} ${TEST_TYPE} PARENT_SCOPE)
     endif()
-
 endfunction()
 
 
 function(assert_type_size type size)
     cmake_parse_arguments(
         PARSE_ARGV
-        3
+        2
         "ASSERT_TYPE"
         ""
         ""
@@ -354,5 +315,4 @@ function(assert_type_size type size)
         # Type does not meet size assertion
         message(FATAL_ERROR "Type assertion failed: ${type} does not equal size ${size}")
     endif()
-
 endfunction()

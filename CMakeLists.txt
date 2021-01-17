@@ -44,23 +44,23 @@ file(GLOB c_sources CONFIGURE_DEPENDS
 
 set(arch_c_sources "")
 set(arch_asm_sources "")
-if(WTX86)
+if(WT_X86)
     file(GLOB arch_c_sources CONFIGURE_DEPENDS "src/checksum/x86/*.c")
-elseif(WTArm64)
+elseif(WT_ARM64)
     file(GLOB arch_c_sources CONFIGURE_DEPENDS "src/checksum/arm64/*.c")
-elseif(WTPower8)
+elseif(WT_POWER8)
     file(GLOB arch_c_sources CONFIGURE_DEPENDS "src/checksum/wtPower8/*.c")
-elseif(WTZseries)
+elseif(WT_ZSERIES)
     file(GLOB arch_c_sources CONFIGURE_DEPENDS "src/checksum/zseries/*.c" "src/checksum/zseries/*.sx")
     file(GLOB arch_asm_sources CONFIGURE_DEPENDS "src/checksum/zseries/*.sx")
 endif()
 
 set(plat_c_sources "")
-if(WTPosix)
+if(WT_POSIX)
     file(GLOB plat_c_sources CONFIGURE_DEPENDS "src/os_posix/*.c")
 endif()
 
-if(WTWin)
+if(WT_WIN)
     file(GLOB plat_c_sources CONFIGURE_DEPENDS "src/os_win/*.c")
 endif()
 
@@ -69,7 +69,7 @@ list(APPEND asm_sources ${arch_asm_sources})
 set(wt_sources "${c_sources};${asm_sources}")
 
 set(link_type "SHARED")
-if(WTStatic)
+if(ENABLE_STATIC)
     set(link_type "STATIC")
 endif()
 

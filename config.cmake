@@ -15,107 +15,117 @@ set(config "${defaults_config}")
 # WiredTiger config options
 
 config_choice(
-    WTArch
     WT_ARCH
     "Target architecture for WiredTiger"
     OPTIONS
-        "X86;WTX86;WT_X86;"
-        "ARM64;WTArm64;WT_ARM64;"
-        "POWER8;WTPower8;WT_POWER8;"
-        "ZSERIES;WTZseries;WT_ZSERIES;"
+        "X86;WT_X86;"
+        "ARM64;WT_ARM64;"
+        "POWER8;WT_POWER8;"
+        "ZSERIES;WT_ZSERIES;"
 )
 
 config_choice(
-    WTOS
     WT_OS
     "Target OS for WiredTiger"
     OPTIONS
-        "Darwin;WTDarwin;WT_Darwin;"
-        "Windows;WTWin;WT_WIN;"
-        "Linux;WTLinux;WT_LINUX;"
+        "Darwin;WT_DARWIN;"
+        "Windows;WT_WIN;"
+        "Linux;WT_LINUX;"
 )
 
 config_bool(
-    WTPosix
     WT_POSIX
     "Is a posix platform"
-    DEFAULT
-        ON
-)
-
-config_bool(
-    WTStatic
-    WT_STATIC
-    "Compile as a static library"
-    DEFAULT
-        ON
+    DEFAULT ON
 )
 
 config_str(
-    WTBufferAlignment
     WT_BUFFER_ALIGNMENT
     "WiredTiger buffer boundary aligment"
-    DEFAULT
-        0
+    DEFAULT 0
 )
 
 config_bool(
-    WTEnableDiagnostic
     HAVE_DIAGNOSTIC
     "Enable WiredTiger diagnostics"
-    DEFAULT
-        OFF
+    DEFAULT ON 
 )
 
 config_bool(
-    WTEnableAttach
     HAVE_ATTACH
     ""
-    DEFAULT
-        OFF
+    DEFAULT OFF
 )
 
+config_bool(
+    ENABLE_LZ4
+    ""
+    DEFAULT OFF
+)
+
+config_bool(
+    ENABLE_SNAPPY
+    ""
+    DEFAULT OFF
+)
+
+config_bool(
+    ENABLE_STATIC
+    "Compile as a static library"
+    DEFAULT ON
+)
+
+config_bool(
+    ENABLE_ZLIB
+    ""
+    DEFAULT OFF
+)
+
+config_bool(
+    ENABLE_ZSTD
+    ""
+    DEFAULT OFF
+)
+
+config_bool(
+    ENABLE_PYTHON
+    ""
+    DEFAULT OFF
+    DEPENDS "NOT ENABLE_STATIC"
+)
+
+
 config_choice(
-    WTWithSpinlock
     SPINLOCK_TYPE
     "Set a spinlock type"
     OPTIONS
-        "gcc;wtSpinlockGCC;SPINLOCK_GCC;"
-        "msvc;wtSpinlockMSVC;SPINLOCK_MSVC;WTWin"
-        "pthread;wtSpinlockPthread;SPINLOCK_PTHREAD_MUTEX;"
-        "pthread_adaptive;wtSpinlockPthread_adaptive;SPINLOCK_PTHREAD_ADAPTIVE;"
+        "gcc;SPINLOCK_GCC;"
+        "msvc;SPINLOCK_MSVC;WTWin"
+        "pthread;SPINLOCK_PTHREAD_MUTEX;"
+        "pthread_adaptive;SPINLOCK_PTHREAD_ADAPTIVE;"
     DEFAULT_NONE
 )
 
 config_str(
-    WTVersionMajor
     VERSION_MAJOR
     "Major version number for WiredTiger"
-    DEFAULT
-        10
+    DEFAULT 10
 )
 
 config_str(
-    WTVersionMinor
     VERSION_MINOR
     "Minor version number for WiredTiger"
-    DEFAULT
-        0
+    DEFAULT 0
 )
 
 config_str(
-    WTVersionPatch
     VERSION_PATCH
     "Path version number for WiredTiger"
-    DEFAULT
-        0
+    DEFAULT 0
 )
 
 config_str(
-    WTVersionString
     VERSION_STRING
     "Version string for WiredTiger"
-    DEFAULT
-    "WiredTiger 10.0.0 (Jan 1. 2021)"
-    QUOTE_CONFIG
+    DEFAULT "WiredTiger 10.0.0 (Jan 1. 2021)"
 )
