@@ -19,12 +19,19 @@ extern "C" {
 #define	WIREDTIGER_VERSION_MAJOR	@VERSION_MAJOR@
 #define	WIREDTIGER_VERSION_MINOR	@VERSION_MINOR@
 #define	WIREDTIGER_VERSION_PATCH	@VERSION_PATCH@
-#define	WIREDTIGER_VERSION_STRING	@VERSION_STRING@
+#define	WIREDTIGER_VERSION_STRING	"@VERSION_STRING@"
 
 /*******************************************
  * Required includes
  *******************************************/
-@wiredtiger_includes_decl@
+#include <sys/types.h>
+#ifndef _WIN32
+#include <inttypes.h>
+#endif
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
 
 /*******************************************
  * Portable type names
