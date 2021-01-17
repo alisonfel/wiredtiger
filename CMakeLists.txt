@@ -16,6 +16,18 @@ endif()
 include(config.cmake)
 include(configs/default.cmake)
 
+set(link_type "STATIC")
+if(NOT ENABLE_STATIC)
+    set(link_type "SHARED")
+    SET_PROPERTY(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)
+endif()
+
+add_subdirectory(ext/compressors/lz4)
+add_subdirectory(ext/compressors/nop)
+add_subdirectory(ext/compressors/snappy)
+add_subdirectory(ext/compressors/zlib)
+add_subdirectory(ext/compressors/zstd)
+
 set(c_sources "")
 set(asm_sources "")
 
@@ -67,12 +79,6 @@ endif()
 list(APPEND c_sources ${arch_c_sources})
 list(APPEND asm_sources ${arch_asm_sources})
 set(wt_sources "${c_sources};${asm_sources}")
-
-set(link_type "STATIC")
-if(NOT ENABLE_STATIC)
-    set(link_type "SHARED")
-    SET_PROPERTY(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)
-endif()
 
 # Establish wiredtiger library target
 add_library(wiredtiger ${link_type} ${wt_sources})

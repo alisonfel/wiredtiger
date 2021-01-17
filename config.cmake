@@ -62,33 +62,9 @@ config_bool(
 )
 
 config_bool(
-    ENABLE_LZ4
-    ""
-    DEFAULT OFF
-)
-
-config_bool(
-    ENABLE_SNAPPY
-    ""
-    DEFAULT OFF
-)
-
-config_bool(
     ENABLE_STATIC
     "Compile as a static library"
     DEFAULT ON
-)
-
-config_bool(
-    ENABLE_ZLIB
-    ""
-    DEFAULT OFF
-)
-
-config_bool(
-    ENABLE_ZSTD
-    ""
-    DEFAULT OFF
 )
 
 config_bool(
