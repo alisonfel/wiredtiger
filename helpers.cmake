@@ -10,6 +10,7 @@ cmake_minimum_required(VERSION 3.12.0)
 
 include(CheckIncludeFiles)
 include(CheckSymbolExists)
+include(CheckLibraryExists)
 include(CheckTypeSize)
 
 function(config_str config_name description)
@@ -157,7 +158,6 @@ function(config_choice config_name description)
     set(exported_configs "${new_exported_configs}" PARENT_SCOPE)
 endfunction()
 
-
 function(config_bool config_name description)
     cmake_parse_arguments(
         PARSE_ARGV
@@ -204,7 +204,6 @@ function(config_bool config_name description)
         set(exported_configs "${new_exported_configs}" PARENT_SCOPE)
     endif()
 endfunction()
-
 
 function(config_func config_name description)
     cmake_parse_arguments(
@@ -302,6 +301,59 @@ function(config_include config_name description)
         set(${config_name}_DISABLED ON CACHE INTERNAL "" FORCE)
     endif()
     if(CONFIG_INCLUDE_EXPORT)
+        set(new_exported_configs "${exported_configs}")
+        list(APPEND new_exported_configs "#define ${config_name} ${${config_name}}")
+        set(exported_configs "${new_exported_configs}" PARENT_SCOPE)
+    endif()
+endfunction()
+
+function(config_lib config_name description)
+    cmake_parse_arguments(
+        PARSE_ARGV
+        2
+        "CONFIG_LIB"
+        "EXPORT"
+        "LIB;FUNC;DEPENDS"
+        ""
+    )
+
+    if (NOT "${CONFIG_LIB_UNPARSED_ARGUMENTS}" STREQUAL "")
+        message(FATAL_ERROR "Unknown arguments to config_lib: ${CONFIG_LIB_UNPARSED_ARGUMENTS}")
+    endif()
+
+    if ("${CONFIG_LIB_LIB}" STREQUAL "")
+        message(FATAL_ERROR "No library passed")
+    endif()
+
+    if ("${CONFIG_LIB_FUNC}" STREQUAL "")
+        message(FATAL_ERROR "No library function passed")
+    endif()
+
+    set(enabled ON)
+    if(NOT "${CONFIG_LIB_DEPENDS}" STREQUAL "")
+        foreach(dependency ${CONFIG_LIB_DEPENDS})
+            string(REGEX REPLACE " " ";" dependency "${dependency}")
+            if(NOT (${dependency}))
+                set(enabled OFF)
+            endif()
+        endforeach()
+    endif()
+
+    if(enabled)
+        check_library_exists(${CONFIG_LIB_LIB} ${CONFIG_LIB_FUNC} "" has_lib_${config_name})
+        # We want to ensure we capture a transition for a disabled to enabled state when dependencies are met
+        if(${config_name}_DISABLED)
+            unset(${config_name}_DISABLED CACHE)
+            set(${config_name} ${has_lib_${config_name}} CACHE STRING "${description}" FORCE)
+        else()
+            set(${config_name} ${has_lib_${config_name}} CACHE STRING "${description}")
+        endif()
+        unset(has_lib_${config_name} CACHE)
+    else()
+        set(${config_name} 0 CACHE INTERNAL "" FORCE)
+        set(${config_name}_DISABLED ON CACHE INTERNAL "" FORCE)
+    endif()
+    if(CONFIG_LIB_EXPORT)
         set(new_exported_configs "${exported_configs}")
         list(APPEND new_exported_configs "#define ${config_name} ${${config_name}}")
         set(exported_configs "${new_exported_configs}" PARENT_SCOPE)

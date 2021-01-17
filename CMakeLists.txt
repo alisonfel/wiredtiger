@@ -68,9 +68,10 @@ list(APPEND c_sources ${arch_c_sources})
 list(APPEND asm_sources ${arch_asm_sources})
 set(wt_sources "${c_sources};${asm_sources}")
 
-set(link_type "SHARED")
-if(ENABLE_STATIC)
-    set(link_type "STATIC")
+set(link_type "STATIC")
+if(NOT ENABLE_STATIC)
+    set(link_type "SHARED")
+    SET_PROPERTY(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)
 endif()
 
 # Establish wiredtiger library target
@@ -84,3 +85,15 @@ target_include_directories(
     PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/include
     PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/config ${CMAKE_CURRENT_LIST_DIR}/src/include
 )
+
+if(HAVE_LIBPTHREAD)
+    target_link_libraries(wiredtiger "pthread")
+endif()
+
+if(HAVE_LIBRT)
+    target_link_libraries(wiredtiger "rt")
+endif()
+
+if(HAVE_LIBDL)
+    target_link_libraries(wiredtiger "dl")
+endif()

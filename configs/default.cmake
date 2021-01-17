@@ -169,4 +169,28 @@ config_func(
     EXPORT
 )
 
+config_lib(
+    HAVE_LIBPTHREAD
+    "Pthread library exists"
+    LIB "pthread"
+    FUNC "pthread_create"
+    EXPORT
+)
+
+config_lib(
+    HAVE_LIBRT
+    "rt library exists"
+    LIB "rt"
+    FUNC "timer_create"
+    EXPORT
+)
+
+config_lib(
+    HAVE_LIBDL
+    "dl library exists"
+    LIB "dl"
+    FUNC "dlopen"
+    EXPORT
+)
+
 set(exported_configs_default "${exported_configs}" CACHE INTERNAL "")
