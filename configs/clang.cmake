@@ -8,21 +8,17 @@
 
 cmake_minimum_required(VERSION 3.11.0)
 
-SET(CMAKE_SYSTEM_NAME Generic)
 
-SET(CROSS_COMPILER_PREFIX ${TARGET}-)
+SET(CMAKE_SYSTEM_NAME Generic)
 
 set(CMAKE_C_COMPILER "clang")
 set(CMAKE_C_COMPILER_ID "Clang")
-set(CMAKE_C_COMPILER_TARGET "${TARGET}")
 
 set(CMAKE_CXX_COMPILER "clang++")
 set(CMAKE_CXX_COMPILER_ID "Clang++")
-set(CMAKE_CXX_COMPILER_TARGET "${TARGET}")
 
 set(CMAKE_ASM_COMPILER "clang")
 set(CMAKE_ASM_COMPILER_ID "Clang")
-set(CMAKE_ASM_COMPILER_TARGET "${TARGET}")
 
 string(APPEND clang_base_c_flags " -Weverything")
 string(APPEND clang_base_c_flags " -Werror")
@@ -39,6 +35,15 @@ string(APPEND clang_base_c_flags " -Wno-thread-safety-analysis")
 string(APPEND clang_base_c_flags " -Wno-disabled-macro-expansion")
 string(APPEND clang_base_c_flags " -Wno-extra-semi-stmt")
 string(APPEND clang_base_c_flags " -Wno-unknown-warning-option")
+
+if(NOT "${WT_TARGET_CONFIG}" STREQUAL "")
+    include(${CMAKE_CURRENT_LIST_DIR}/../helpers.cmake)
+    extract_target_config("${WT_TARGET_CONFIG}" config_arch config_plat)
+    if(NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/${config_arch}/${config_plat}/plat_clang.cmake")                                                     
+        message(FATAL_ERROR "WT_TARGET_CONFIG (${config_arch}/${config_plat}) directory does not have a plat_clang.cmake file")                                                                           
+    endif()
+    include("${CMAKE_CURRENT_LIST_DIR}/${config_arch}/${config_plat}/plat_clang.cmake")
+endif()
 
 set(CMAKE_C_FLAGS "${clang_base_c_flags}" CACHE STRING "" FORCE)
 

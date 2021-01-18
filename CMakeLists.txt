@@ -10,8 +10,16 @@ cmake_minimum_required(VERSION 3.12.0)
 
 project(WiredTiger C ASM)
 
-if(WT_PLAT_CONFIG)
-    include(configs/${WT_PLAT_CONFIG}.cmake)
+include(helpers.cmake)
+
+if(WT_TARGET_CONFIG)
+    extract_target_config("${WT_TARGET_CONFIG}" wt_config_arch wt_config_plat)
+    if(NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/configs/${wt_config_arch}/${wt_config_plat}/config.cmake")
+        message(FATAL_ERROR "WT_PLAT_CONFIG does not exist: ${WT_TARGET_CONFIG}")
+    endif()
+    include(configs/${wt_config_arch}/${wt_config_plat}/config.cmake)
+else()
+    message(FATAL_ERROR "Missing WT_PLAT_CONFIG variable")
 endif()
 include(config.cmake)
 include(configs/default.cmake)
@@ -30,6 +38,7 @@ add_subdirectory(ext/compressors/zstd)
 
 set(c_sources "")
 set(asm_sources "")
+set(plat_sources "")
 
 file(GLOB c_sources CONFIGURE_DEPENDS
     "src/block/*.c"
@@ -78,7 +87,8 @@ endif()
 
 list(APPEND c_sources ${arch_c_sources})
 list(APPEND asm_sources ${arch_asm_sources})
-set(wt_sources "${c_sources};${asm_sources}")
+list(APPEND plat_sources ${plat_c_sources})
+set(wt_sources "${c_sources};${plat_sources};${asm_sources}")
 
 # Establish wiredtiger library target
 add_library(wiredtiger ${link_type} ${wt_sources})
