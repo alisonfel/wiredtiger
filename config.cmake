@@ -88,6 +88,12 @@ config_choice(
 )
 
 config_str(
+    CC_OPTIMIZE_LEVEL
+    "CC optimisation level"
+    DEFAULT "-O3"
+)
+
+config_str(
     VERSION_MAJOR
     "Major version number for WiredTiger"
     DEFAULT 10
@@ -110,5 +116,11 @@ config_str(
     "Version string for WiredTiger"
     DEFAULT "WiredTiger 10.0.0 (Jan 1. 2021)"
 )
+
+if(HAVE_DIAGNOSTIC)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g" CACHE STRING "" FORCE)
+endif()
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CC_OPTIMIZE_LEVEL}" CACHE STRING "" FORCE)
 
 set(exported_configs_config "${exported_configs}" CACHE INTERNAL "")
