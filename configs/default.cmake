@@ -60,6 +60,8 @@ config_include(
     HAVE_X86INTRIN_H
     "Include x86intrin.h exists"
     FILE "x86intrin.h"
+    DEPENDS "WT_X86"
+    HIDE_DISABLED
     EXPORT
 )
 

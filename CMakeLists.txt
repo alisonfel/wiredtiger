@@ -12,15 +12,14 @@ project(WiredTiger C ASM)
 
 include(helpers.cmake)
 
-if(WT_TARGET_CONFIG)
-    extract_target_config("${WT_TARGET_CONFIG}" wt_config_arch wt_config_plat)
-    if(NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/configs/${wt_config_arch}/${wt_config_plat}/config.cmake")
-        message(FATAL_ERROR "WT_PLAT_CONFIG does not exist: ${WT_TARGET_CONFIG}")
-    endif()
-    include(configs/${wt_config_arch}/${wt_config_plat}/config.cmake)
-else()
-    message(FATAL_ERROR "Missing WT_PLAT_CONFIG variable")
+if(NOT WT_ARCH OR NOT WT_OS)
+    message(FATAL_ERROR "Need to pass in both WT_ARCH & WT_OS")
 endif()
+
+if(NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/configs/${WT_ARCH}/${WT_OS}/config.cmake")
+    message(FATAL_ERROR "${WT_ARCH}/${WT_OS}/config.cmake does not exist")
+endif()
+include(configs/${WT_ARCH}/${WT_OS}/config.cmake)
 include(config.cmake)
 include(configs/default.cmake)
 

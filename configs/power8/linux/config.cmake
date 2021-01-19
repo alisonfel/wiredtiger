@@ -8,8 +8,8 @@
 
 cmake_minimum_required(VERSION 3.12.0)
 
-set(WT_ARCH "POWER8" CACHE STRING "")
-set(WT_OS "Linux" CACHE STRING "")
+set(WT_ARCH "power8" CACHE STRING "")
+set(WT_OS "linux" CACHE STRING "")
 set(WT_POSIX ON CACHE BOOL "")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_GNU_SOURCE" CACHE STRING "" FORCE)

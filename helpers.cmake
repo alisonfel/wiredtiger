@@ -239,7 +239,12 @@ function(config_func config_name description)
 
     if(enabled)
         set(CMAKE_REQUIRED_LINK_OPTIONS "${CONFIG_FUNC_LINK_OPTIONS}")
+        if((NOT "${WT_ARCH}" STREQUAL "") AND (NOT "${WT_ARCH}" STREQUAL ""))
+            set(CMAKE_REQUIRED_FLAGS "-DWT_ARCH=${WT_ARCH} -DWT_OS=${WT_OS}")
+        endif()
         check_symbol_exists(${CONFIG_FUNC_FUNC} "${CONFIG_FUNC_FILES}" has_symbol_${config_name})
+        set(CMAKE_REQUIRED_LINK_OPTIONS)
+        set(CMAKE_REQUIRED_FLAGS)
         # We want to ensure we capture a transition for a disabled to enabled state when dependencies are met
         if(${config_name}_DISABLED)
             unset(${config_name}_DISABLED CACHE)
@@ -264,7 +269,7 @@ function(config_include config_name description)
         PARSE_ARGV
         2
         "CONFIG_INCLUDE"
-        "EXPORT"
+        "EXPORT;HIDE_DISABLED"
         "FILE;DEPENDS"
         ""
     )
@@ -288,7 +293,12 @@ function(config_include config_name description)
     endif()
 
     if(enabled)
+        set(CMAKE_REQUIRED_LINK_OPTIONS "${CONFIG_FUNC_LINK_OPTIONS}")
+        if((NOT "${WT_ARCH}" STREQUAL "") AND (NOT "${WT_ARCH}" STREQUAL ""))
+            set(CMAKE_REQUIRED_FLAGS "-DWT_ARCH=${WT_ARCH} -DWT_OS=${WT_OS}")
+        endif()
         check_include_files(${CONFIG_INCLUDE_FILE} ${config_name})
+        set(CMAKE_REQUIRED_FLAGS)
         # We want to ensure we capture a transition for a disabled to enabled state when dependencies are met
         if(${config_name}_DISABLED)
             unset(${config_name}_DISABLED CACHE)
@@ -300,7 +310,7 @@ function(config_include config_name description)
         set(${config_name} OFF CACHE INTERNAL "" FORCE)
         set(${config_name}_DISABLED ON CACHE INTERNAL "" FORCE)
     endif()
-    if(CONFIG_INCLUDE_EXPORT)
+    if(CONFIG_INCLUDE_EXPORT AND (enabled AND NOT CONFIG_INCLUDED_HIDE_DISABLE))
         set(new_exported_configs "${exported_configs}")
         list(APPEND new_exported_configs "#define ${config_name} ${${config_name}}")
         set(exported_configs "${new_exported_configs}" PARENT_SCOPE)
@@ -340,7 +350,11 @@ function(config_lib config_name description)
     endif()
 
     if(enabled)
+        if((NOT "${WT_ARCH}" STREQUAL "") AND (NOT "${WT_ARCH}" STREQUAL ""))
+            set(CMAKE_REQUIRED_FLAGS "-DWT_ARCH=${WT_ARCH} -DWT_OS=${WT_OS}")
+        endif()
         check_library_exists(${CONFIG_LIB_LIB} ${CONFIG_LIB_FUNC} "" has_lib_${config_name})
+        set(CMAKE_REQUIRED_FLAGS)
         # We want to ensure we capture a transition for a disabled to enabled state when dependencies are met
         if(${config_name}_DISABLED)
             unset(${config_name}_DISABLED CACHE)

@@ -8,8 +8,8 @@
 
 cmake_minimum_required(VERSION 3.12.0)
 
-set(WT_ARCH "ZSERIES" CACHE STRING "")
-set(WT_OS "Linux" CACHE STRING "")
+set(WT_ARCH "zseries" CACHE STRING "")
+set(WT_OS "linux" CACHE STRING "")
 set(WT_POSIX ON CACHE BOOL "")
 
 # Allow assembler to detect '.sx' file extensions 

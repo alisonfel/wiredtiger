@@ -18,19 +18,19 @@ config_choice(
     WT_ARCH
     "Target architecture for WiredTiger"
     OPTIONS
-        "X86;WT_X86;"
-        "ARM64;WT_ARM64;"
-        "POWER8;WT_POWER8;"
-        "ZSERIES;WT_ZSERIES;"
+        "x86;WT_X86;"
+        "arm64;WT_ARM64;"
+        "power8;WT_POWER8;"
+        "zseries;WT_ZSERIES;"
 )
 
 config_choice(
     WT_OS
     "Target OS for WiredTiger"
     OPTIONS
-        "Darwin;WT_DARWIN;"
-        "Windows;WT_WIN;"
-        "Linux;WT_LINUX;"
+        "darwin;WT_DARWIN;"
+        "windows;WT_WIN;"
+        "linux;WT_LINUX;"
 )
 
 config_bool(
