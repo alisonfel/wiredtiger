@@ -127,7 +127,7 @@
 #cmakedefine HAVE_X86INTRIN_H 1
 
 /* Spinlock type from mutex.h. */
-#cmakedefine SPINLOCK_TYPE @SPINLOCK_TYPE@
+#cmakedefine SPINLOCK_TYPE @SPINLOCK_TYPE_CONFIG_VAR@
 
 /* Version number of package */
 #define VERSION "@VERSION_MAJOR@.@VERSION_MINOR@.@VERSION_PATCH@"

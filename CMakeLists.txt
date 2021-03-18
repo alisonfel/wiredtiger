@@ -12,7 +12,12 @@ project(WiredTiger C ASM)
 
 include(tools/cmake/helpers.cmake)
 
-#TODO AUTO DETERMINE WT_ARCH or WT_OS
+# TODO
+# AUTO DETERMINE WT_ARCH or WT_OS
+# Extensions etc
+# Clang version for compile flags
+# Comments
+
 if(NOT WT_ARCH OR NOT WT_OS)
     message(FATAL_ERROR "Need to pass in both WT_ARCH & WT_OS")
 endif()
