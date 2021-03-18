@@ -21,8 +21,8 @@ if(NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/configs/${WT_ARCH}/${WT_OS}/config.cmak
     message(FATAL_ERROR "${WT_ARCH}/${WT_OS}/config.cmake does not exist")
 endif()
 include(configs/${WT_ARCH}/${WT_OS}/config.cmake)
-include(configs/base.cmake)
 include(configs/auto.cmake)
+include(configs/base.cmake)
 
 set(link_type "STATIC")
 if(NOT ENABLE_STATIC)

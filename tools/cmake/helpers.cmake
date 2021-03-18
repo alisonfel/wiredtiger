@@ -13,7 +13,25 @@ include(CheckSymbolExists)
 include(CheckLibraryExists)
 include(CheckTypeSize)
 
-function(config_str config_name description)
+function(eval_dependency depends enabled)
+    # If no dependencies were given then we default to an enabled state
+    if(("${depends}" STREQUAL "") OR ("${depends}" STREQUAL "NOTFOUND"))
+        set(enabled ON PARENT_SCOPE)
+        return()
+    endif()
+    # Evaluate each dependency
+    set(is_enabled ON)
+    foreach(dependency ${depends})
+        string(REGEX REPLACE " +" ";" dependency "${dependency}")
+        if(NOT (${dependency}))
+            set(is_enabled OFF)
+            break()
+        endif()
+    endforeach()
+    set(enabled ${is_enabled} PARENT_SCOPE)
+endfunction()
+
+function(config_string config_name description)
     cmake_parse_arguments(
         PARSE_ARGV
         2
@@ -30,16 +48,7 @@ function(config_str config_name description)
     endif()
 
     # Check that the configs dependencies are enabled before setting it to a visible enabled state
-    set(enabled ON)
-    if(NOT "${CONFIG_STR_DEPENDS}" STREQUAL "")
-        foreach(dependency ${CONFIG_STR_DEPENDS})
-            string(REGEX REPLACE " " ";" dependency "${dependency}")
-            if(NOT ${dependency})
-                set(enabled OFF)
-            endif()
-        endforeach()
-    endif()
-
+    eval_dependency("${CONFIG_STR_DEPENDS}" enabled)
     set(default_value "${CONFIG_STR_DEFAULT}")
     if(enabled)
         # We want to ensure we capture a transition for a disabled to enabled state when dependencies are met
@@ -57,14 +66,14 @@ function(config_str config_name description)
         set(${config_name} "${default_value}" CACHE INTERNAL "" FORCE)
         set(${config_name}_DISABLED ON CACHE INTERNAL "" FORCE)
     endif()
-endfunction(config_str)
+endfunction()
 
 function(config_choice config_name description)
     cmake_parse_arguments(
         PARSE_ARGV
         2
         "CONFIG_OPT"
-        "DEFAULT_NONE"
+        ""
         ""
         "OPTIONS"
     )
@@ -87,15 +96,9 @@ function(config_choice config_name description)
         endif()
         list(GET curr_option 0 option_config_field)
         list(GET curr_option 1 option_config_var)
-        list(GET curr_depends 2 option_depends)
+        list(GET curr_option 2 option_depends)
 
-        set(enabled ON)
-        if(NOT "${option_depends}" STREQUAL "NOTFOUND")
-            if(NOT ${option_depends})
-                set(enabled OFF)
-            endif()
-        endif()
-
+        eval_dependency("${option_depends}" enabled)
         if(enabled)
             list(APPEND all_option_config_fields ${option_config_field})
             if (found_option)
@@ -117,16 +120,18 @@ function(config_choice config_name description)
             endif()
         else()
             unset(${option_config_var} CACHE)
+            # Check if the option is already set with this given field - we want to clear it if so
+            if("${${config_name}}" STREQUAL "${option_config_field}")
+                unset(${config_name} CACHE)
+            endif()
         endif()
     endforeach()
 
-    if(NOT ${CONFIG_OPT_DEFAULT_NONE})
-        if(NOT found_pre_set)
-            set(${default_config_var} ON CACHE INTERNAL "" FORCE)
-            set(${config_name} ${default_config_field} CACHE STRING ${description})
-        endif()
-        set_property(CACHE ${config_name} PROPERTY STRINGS ${all_option_config_fields})
+    if(NOT found_pre_set)
+        set(${default_config_var} ON CACHE INTERNAL "" FORCE)
+        set(${config_name} ${default_config_field} CACHE STRING ${description})
     endif()
+    set_property(CACHE ${config_name} PROPERTY STRINGS ${all_option_config_fields})
 endfunction()
 
 function(config_bool config_name description)
@@ -147,16 +152,7 @@ function(config_bool config_name description)
     endif()
 
     # Check that the configs dependencies are enabled before setting it to a visible enabled state
-    set(enabled ON)
-    if(NOT "${CONFIG_BOOL_DEPENDS}" STREQUAL "")
-        foreach(dependency ${CONFIG_BOOL_DEPENDS})
-            string(REGEX REPLACE " +" ";" dependency "${dependency}")
-            if(NOT (${dependency}))
-                set(enabled OFF)
-            endif()
-        endforeach()
-    endif()
-
+    eval_dependency("${CONFIG_BOOL_DEPENDS}" enabled)
     if(enabled)
         # We want to ensure we capture a transition for a disabled to enabled state when dependencies are met
         if(${config_name}_DISABLED)
@@ -193,16 +189,7 @@ function(config_func config_name description)
         message(FATAL_ERROR "No function passed")
     endif()
 
-    set(enabled ON)
-    if(NOT "${CONFIG_FUNC_DEPENDS}" STREQUAL "")
-        foreach(dependency ${CONFIG_FUNC_DEPENDS})
-            string(REGEX REPLACE " " ";" dependency "${dependency}")
-            if(NOT (${dependency}))
-                set(enabled OFF)
-            endif()
-        endforeach()
-    endif()
-
+    eval_dependency("${CONFIG_FUNC_DEPENDS}" enabled)
     if(enabled)
         set(CMAKE_REQUIRED_LIBRARIES "${CONFIG_FUNC_LIBS}")
         if((NOT "${WT_ARCH}" STREQUAL "") AND (NOT "${WT_ARCH}" STREQUAL ""))
@@ -243,16 +230,7 @@ function(config_include config_name description)
         message(FATAL_ERROR "No include file passed")
     endif()
 
-    set(enabled ON)
-    if(NOT "${CONFIG_INCLUDE_DEPENDS}" STREQUAL "NOTFOUND")
-        foreach(dependency ${CONFIG_INCLUDE_DEPENDS})
-            string(REGEX REPLACE " " ";" dependency "${dependency}")
-            if(NOT ${dependency})
-                set(enabled OFF)
-            endif()
-        endforeach()
-    endif()
-
+    eval_dependency("${CONFIG_INCLUDE_DEPENDS}" enabled)
     if(enabled)
         set(CMAKE_REQUIRED_LINK_OPTIONS "${CONFIG_FUNC_LINK_OPTIONS}")
         if((NOT "${WT_ARCH}" STREQUAL "") AND (NOT "${WT_ARCH}" STREQUAL ""))
@@ -298,16 +276,7 @@ function(config_lib config_name description)
         message(FATAL_ERROR "No library function passed")
     endif()
 
-    set(enabled ON)
-    if(NOT "${CONFIG_LIB_DEPENDS}" STREQUAL "")
-        foreach(dependency ${CONFIG_LIB_DEPENDS})
-            string(REGEX REPLACE " " ";" dependency "${dependency}")
-            if(NOT (${dependency}))
-                set(enabled OFF)
-            endif()
-        endforeach()
-    endif()
-
+    eval_dependency("${CONFIG_LIB_DEPENDS}" enabled)
     if(enabled)
         if((NOT "${WT_ARCH}" STREQUAL "") AND (NOT "${WT_ARCH}" STREQUAL ""))
             set(CMAKE_REQUIRED_FLAGS "-DWT_ARCH=${WT_ARCH} -DWT_OS=${WT_OS}")
@@ -346,16 +315,7 @@ function(config_compile config_name description)
         message(FATAL_ERROR "No source passed")
     endif()
 
-    set(enabled ON)
-    if(NOT "${CONFIG_SOURCE_DEPENDS}" STREQUAL "")
-        foreach(dependency ${CONFIG_SOURCE_DEPENDS})
-            string(REGEX REPLACE " " ";" dependency "${dependency}")
-            if(NOT (${dependency}))
-                set(enabled OFF)
-            endif()
-        endforeach()
-    endif()
-
+    eval_dependency("${CONFIG_COMPILE_DEPENDS}" enabled)
     if(enabled)
         try_compile(
             can_compile_${config_name}

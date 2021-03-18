@@ -31,7 +31,7 @@ if(${u_intmax_size} STREQUAL "")
     endif()
 endif()
 
-config_str(
+config_string(
     off_t_decl
     "off_t type declaration (Autoconf backwards compatibility config)"
     DEFAULT
@@ -39,7 +39,7 @@ config_str(
     INTERNAL
 )
 
-config_str(
+config_string(
     uintprt_t_decl
     "uintptr_t type declaration (Autoconf backwards compatibility config)"
     DEFAULT "${default_uintmax_def}"
@@ -249,6 +249,6 @@ config_compile(
     HAVE_PTHREAD_COND_MONOTONIC
     "If pthread condition variables support monotonic clocks"
     SOURCE "${CMAKE_SOURCE_DIR}/configs/compile_test/pthread_cond_monotonic_test.c"
-    DEPENDS "HAVE_LIBPTHREAD"
     LIBS "pthread"
+    DEPENDS "HAVE_LIBPTHREAD"
 )

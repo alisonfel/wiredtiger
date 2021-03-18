@@ -40,7 +40,7 @@ config_bool(
     DEPENDS "WT_LINUX OR WT_DARWIN"
 )
 
-config_str(
+config_string(
     WT_BUFFER_ALIGNMENT_DEFAULT
     "WiredTiger buffer boundary aligment"
     DEFAULT 0
@@ -87,37 +87,37 @@ config_choice(
     SPINLOCK_TYPE
     "Set a spinlock type"
     OPTIONS
+        "pthread;SPINLOCK_PTHREAD_MUTEX;HAVE_LIBPTHREAD"
         "gcc;SPINLOCK_GCC;"
-        "msvc;SPINLOCK_MSVC;WTWin"
-        "pthread;SPINLOCK_PTHREAD_MUTEX;"
-        "pthread_adaptive;SPINLOCK_PTHREAD_ADAPTIVE;"
+        "msvc;SPINLOCK_MSVC;WT_WIN"
+        "pthread_adaptive;SPINLOCK_PTHREAD_ADAPTIVE;HAVE_LIBPTHREAD"
 )
 
-config_str(
+config_string(
     CC_OPTIMIZE_LEVEL
     "CC optimisation level"
     DEFAULT "-O3"
 )
 
-config_str(
+config_string(
     VERSION_MAJOR
     "Major version number for WiredTiger"
     DEFAULT 10
 )
 
-config_str(
+config_string(
     VERSION_MINOR
     "Minor version number for WiredTiger"
     DEFAULT 0
 )
 
-config_str(
+config_string(
     VERSION_PATCH
     "Path version number for WiredTiger"
     DEFAULT 0
 )
 
-config_str(
+config_string(
     VERSION_STRING
     "Version string for WiredTiger"
     DEFAULT "\"WiredTiger 10.0.0 (Jan 1. 2021)\""
