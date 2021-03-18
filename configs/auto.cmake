@@ -36,12 +36,14 @@ config_str(
     "off_t type declaration (Autoconf backwards compatibility config)"
     DEFAULT
     "typedef off_t wt_off_t\\;"
+    INTERNAL
 )
 
 config_str(
     uintprt_t_decl
     "uintptr_t type declaration (Autoconf backwards compatibility config)"
     DEFAULT "${default_uintmax_def}"
+    INTERNAL
 )
 
 config_include(

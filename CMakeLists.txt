@@ -36,61 +36,27 @@ endif()
 #add_subdirectory(ext/compressors/zlib)
 #add_subdirectory(ext/compressors/zstd)
 
-set(c_sources "")
-set(asm_sources "")
-set(plat_sources "")
-
-## TODO: Use files list instead of glob
-file(GLOB c_sources CONFIGURE_DEPENDS
-    "src/block/*.c"
-    "src/bloom/*.c"
-    "src/btree/*.c"
-    "src/checksum/software/*.c"
-    "src/config/*.c"
-    "src/conn/*.c"
-    "src/cursor/*.c"
-    "src/evict/*.c"
-    "src/history/*.c"
-    "src/log/*.c"
-    "src/lsm/*.c"
-    "src/meta/*.c"
-    "src/optrack/*.c"
-    "src/os_common/*.c"
-    "src/packing/*.c"
-    "src/reconcile/*.c"
-    "src/schema/*.c"
-    "src/session/*.c"
-    "src/support/*.c"
-    "src/txn/*.c"
-)
-
-set(arch_c_sources "")
-set(arch_asm_sources "")
+set(arch_host "")
+set(plat_host "")
+# Determine architecture host for our filelist parse
 if(WT_X86)
-    file(GLOB arch_c_sources CONFIGURE_DEPENDS "src/checksum/x86/*.c")
-elseif(WT_ARM64)
-    file(GLOB arch_c_sources CONFIGURE_DEPENDS "src/checksum/arm64/*.c")
+    set(arch_host "X86_HOST")
+elseif(WT_ARM640)
+    set(arch_host "ARM64_HOST")
 elseif(WT_POWER8)
-    file(GLOB arch_c_sources CONFIGURE_DEPENDS "src/checksum/wtPower8/*.c")
+    set(arch_host "POWERPC_HOST")
 elseif(WT_ZSERIES)
-    file(GLOB arch_c_sources CONFIGURE_DEPENDS "src/checksum/zseries/*.c" "src/checksum/zseries/*.sx")
-    file(GLOB arch_asm_sources CONFIGURE_DEPENDS "src/checksum/zseries/*.sx")
+    set(arch_host "ZSERIES_HOST")
 endif()
-
-set(plat_c_sources "")
+# Determine platform host for our filelist parse
 if(WT_POSIX)
-    file(GLOB plat_c_sources CONFIGURE_DEPENDS "src/os_posix/*.c")
+    set(plat_host "POSIX_HOST")
+elseif(WT_WIN)
+    set(plat_host "WINDOWS_HOST")
 endif()
 
-if(WT_WIN)
-    file(GLOB plat_c_sources CONFIGURE_DEPENDS "src/os_win/*.c")
-endif()
-
-list(APPEND c_sources ${arch_c_sources})
-list(APPEND asm_sources ${arch_asm_sources})
-list(APPEND plat_sources ${plat_c_sources})
-set(wt_sources "${c_sources};${plat_sources};${asm_sources}")
-
+# Collect all the library sources we need to compile from the source filelist
+parse_filelist_source(${CMAKE_CURRENT_LIST_DIR}/dist/filelist ${arch_host} ${plat_host} wt_sources)
 # Establish wiredtiger library target
 add_library(wiredtiger ${link_type} ${wt_sources})
 

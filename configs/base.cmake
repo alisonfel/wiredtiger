@@ -37,6 +37,7 @@ config_bool(
     WT_POSIX
     "Is a posix platform"
     DEFAULT ON
+    DEPENDS "WT_LINUX OR WT_DARWIN"
 )
 
 config_str(
