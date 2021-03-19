@@ -8,9 +8,6 @@
 
 cmake_minimum_required(VERSION 3.11.0)
 
-
-set(CMAKE_SYSTEM_NAME Generic)
-
 set(CMAKE_C_COMPILER "clang")
 set(CMAKE_C_COMPILER_ID "Clang")
 
@@ -37,7 +34,7 @@ string(APPEND clang_base_c_flags " -Wno-extra-semi-stmt")
 string(APPEND clang_base_c_flags " -Wno-unknown-warning-option")
 
 if(NOT "${COMPILE_DEFINITIONS}" STREQUAL "")
-    ### XXX: intermediate hack to overcome check_symbol_exits using toolchain file without WT_ARCH and WT_OS
+    ### Overcome check_symbol_exits using toolchain file without WT_ARCH and WT_OS
     string(REGEX MATCH "-DWT_ARCH=([A-Za-z0-9]+) -DWT_OS=([A-Za-z0-9]+)" _ ${COMPILE_DEFINITIONS})
     set(wt_config_arch ${CMAKE_MATCH_1})
     set(wt_config_os ${CMAKE_MATCH_2})

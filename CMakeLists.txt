@@ -13,13 +13,21 @@ project(WiredTiger C ASM)
 include(tools/cmake/helpers.cmake)
 
 # TODO
-# AUTO DETERMINE WT_ARCH or WT_OS
 # Extensions etc
-# Clang version for compile flags
 # Comments
 
-if(NOT WT_ARCH OR NOT WT_OS)
-    message(FATAL_ERROR "Need to pass in both WT_ARCH & WT_OS")
+if(NOT WT_ARCH)
+    # We will default defer to our callers host architecture as our target
+    if ("${CMAKE_HOST_SYSTEM_PROCESSOR}" MATCHES "^(x86_64|i686|i386)$")
+        set(WT_ARCH "x86")
+    else()
+        set(WT_ARCH "${CMAKE_HOST_SYSTEM_PROCESSOR}")
+    endif()
+endif()
+if(NOT WT_OS)
+    # We will default defer to the host OS as our target
+    string(TOLOWER "${CMAKE_HOST_SYSTEM_NAME}" host_os)
+    set(WT_OS "${host_os}")
 endif()
 
 if(NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/configs/${WT_ARCH}/${WT_OS}/config.cmake")
@@ -56,7 +64,7 @@ if(WT_X86)
     set(arch_host "X86_HOST")
 elseif(WT_ARM640)
     set(arch_host "ARM64_HOST")
-elseif(WT_POWER8)
+elseif(WT_PPC64)
     set(arch_host "POWERPC_HOST")
 elseif(WT_ZSERIES)
     set(arch_host "ZSERIES_HOST")

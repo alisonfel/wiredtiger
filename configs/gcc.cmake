@@ -8,9 +8,6 @@
 
 cmake_minimum_required(VERSION 3.11.0)
 
-
-set(CMAKE_SYSTEM_NAME Generic)
-
 if(NOT "${COMPILE_DEFINITIONS}" STREQUAL "")
     ### Additional check to overcome check_[symbol|include|function]_exits using toolchain file without passing WT_ARCH and WT_OS
     string(REGEX MATCH "-DWT_ARCH=([A-Za-z0-9]+) -DWT_OS=([A-Za-z0-9]+)" _ ${COMPILE_DEFINITIONS})
