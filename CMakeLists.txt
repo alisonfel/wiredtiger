@@ -16,6 +16,12 @@ include(tools/cmake/helpers.cmake)
 # Extensions etc
 # Comments
 
+find_program(CCACHE_FOUND ccache)
+if(CCACHE_FOUND)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+endif(CCACHE_FOUND)
+
 if(NOT WT_ARCH)
     # We will default defer to our callers host architecture as our target
     if ("${CMAKE_HOST_SYSTEM_PROCESSOR}" MATCHES "^(x86_64|i686|i386)$")
@@ -57,27 +63,8 @@ endif()
 #add_subdirectory(ext/compressors/zlib)
 #add_subdirectory(ext/compressors/zstd)
 
-set(arch_host "")
-set(plat_host "")
-# Determine architecture host for our filelist parse
-if(WT_X86)
-    set(arch_host "X86_HOST")
-elseif(WT_ARM640)
-    set(arch_host "ARM64_HOST")
-elseif(WT_PPC64)
-    set(arch_host "POWERPC_HOST")
-elseif(WT_ZSERIES)
-    set(arch_host "ZSERIES_HOST")
-endif()
-# Determine platform host for our filelist parse
-if(WT_POSIX)
-    set(plat_host "POSIX_HOST")
-elseif(WT_WIN)
-    set(plat_host "WINDOWS_HOST")
-endif()
-
 # Collect all the library sources we need to compile from the source filelist
-parse_filelist_source(${CMAKE_CURRENT_LIST_DIR}/dist/filelist ${arch_host} ${plat_host} wt_sources)
+parse_filelist_source(${CMAKE_CURRENT_LIST_DIR}/dist/filelist wt_sources)
 # Establish wiredtiger library target
 add_library(wiredtiger ${link_type} ${wt_sources})
 
