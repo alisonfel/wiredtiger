@@ -18,7 +18,7 @@ set(CMAKE_ASM_COMPILER "clang")
 set(CMAKE_ASM_COMPILER_ID "Clang")
 
 if(NOT "${COMPILE_DEFINITIONS}" STREQUAL "")
-    ### Additional check to overcome check_[symbol|include|function]_exits using toolchain file without passing WT_ARCH and WT_OS 
+    ### Additional check to overcome check_[symbol|include|function]_exits using toolchain file without passing WT_ARCH and WT_OS
     string(REGEX MATCH "-DWT_ARCH=([A-Za-z0-9]+) -DWT_OS=([A-Za-z0-9]+)" _ ${COMPILE_DEFINITIONS})
     set(wt_config_arch ${CMAKE_MATCH_1})
     set(wt_config_os ${CMAKE_MATCH_2})

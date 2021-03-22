@@ -8,7 +8,7 @@
 
 cmake_minimum_required(VERSION 3.12.0)
 
-include(tools/cmake/helpers.cmake)
+include(build_cmake/helpers.cmake)
 
 ### AutoConfigure-like options and checks
 
@@ -280,7 +280,7 @@ config_lib(
 config_compile(
     HAVE_PTHREAD_COND_MONOTONIC
     "If pthread condition variables support monotonic clocks"
-    SOURCE "${CMAKE_SOURCE_DIR}/configs/compile_test/pthread_cond_monotonic_test.c"
+    SOURCE "${CMAKE_CURRENT_LIST_DIR}/compile_test/pthread_cond_monotonic_test.c"
     LIBS "pthread"
     DEPENDS "HAVE_LIBPTHREAD"
 )

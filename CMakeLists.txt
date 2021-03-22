@@ -16,10 +16,9 @@ endif(CCACHE_FOUND)
 
 project(WiredTiger C ASM)
 
-include(tools/cmake/helpers.cmake)
+include(build_cmake/helpers.cmake)
 
 # TODO
-# TCMalloc link
 # Comments
 # Complete all POSIX platforms
 
@@ -37,18 +36,18 @@ if(NOT WT_OS)
     set(WT_OS "${host_os}")
 endif()
 
-if(NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/configs/${WT_ARCH}/${WT_OS}/config.cmake")
-    message(FATAL_ERROR "${WT_ARCH}/${WT_OS}/config.cmake does not exist")
+if(NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/build_cmake/configs/${WT_ARCH}/${WT_OS}/config.cmake")
+    message(FATAL_ERROR "build_cmake/configs/${WT_ARCH}/${WT_OS}/config.cmake does not exist")
 endif()
-include(configs/${WT_ARCH}/${WT_OS}/config.cmake)
-include(configs/auto.cmake)
-include(configs/base.cmake)
+include(build_cmake/configs/${WT_ARCH}/${WT_OS}/config.cmake)
+include(build_cmake/configs/auto.cmake)
+include(build_cmake/configs/base.cmake)
 
 if(ENABLE_STRICT)
     if("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
-        include(configs/gcc_strict.cmake)
+        include(build_cmake/strict/gcc_strict.cmake)
     elseif("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
-        include(configs/clang_strict.cmake)
+        include(build_cmake/strict/clang_strict.cmake)
     endif()
 endif()
 
@@ -69,7 +68,7 @@ add_library(wiredtiger ${link_type} ${wt_sources})
 # Generate wiredtiger.h
 configure_file(src/include/wiredtiger.in "include/wiredtiger.h" @ONLY)
 # Generate our wiredtiger_config.h
-configure_file(configs/wiredtiger_config.h.in "config/wiredtiger_config.h" @ONLY)
+configure_file(build_cmake/configs/wiredtiger_config.h.in "config/wiredtiger_config.h" @ONLY)
 # Set our targets public and private includes
 target_include_directories(
     wiredtiger
@@ -106,4 +105,4 @@ if(HAVE_BUILTIN_EXTENSION_ZSTD)
 endif()
 
 # Establish our install target configuration
-include(configs/install.cmake)
+include(build_cmake/install/install.cmake)

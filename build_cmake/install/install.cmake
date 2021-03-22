@@ -31,7 +31,7 @@ install(TARGETS wiredtiger
 
 # Create our wiredtiger pkgconfig (for POSIX builds)
 if(WT_POSIX)
-    configure_file(${CMAKE_SOURCE_DIR}/build_posix/wiredtiger.pc.in wiredtiger.pc @ONLY)
+    configure_file(${CMAKE_CURRENT_LIST_DIR}/wiredtiger.pc.in wiredtiger.pc @ONLY)
     install(
         FILES ${CMAKE_BINARY_DIR}/wiredtiger.pc
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig

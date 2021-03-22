@@ -8,7 +8,7 @@
 
 cmake_minimum_required(VERSION 3.12.0)
 
-include(tools/cmake/helpers.cmake)
+include(build_cmake/helpers.cmake)
 
 # WiredTiger config options
 
@@ -59,7 +59,7 @@ config_bool(
 config_bool(
     ENABLE_STATIC
     "Compile as a static library"
-    DEFAULT ON
+    DEFAULT OFF
 )
 
 config_bool(
