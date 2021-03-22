@@ -270,6 +270,13 @@ config_lib(
     FUNC "ZSTD_versionString"
 )
 
+config_lib(
+    HAVE_LIBTCMALLOC
+    "tcmalloc library exists"
+    LIB "tcmalloc"
+    FUNC "tc_malloc"
+)
+
 config_compile(
     HAVE_PTHREAD_COND_MONOTONIC
     "If pthread condition variables support monotonic clocks"

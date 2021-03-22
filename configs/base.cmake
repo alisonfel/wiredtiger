@@ -129,6 +129,14 @@ config_bool(
     DEPENDS_ERROR ON "Failed to find zstd library"
 )
 
+config_bool(
+    ENABLE_TCMALLOC
+    "Use TCMalloc as the backend allocator"
+    DEFAULT OFF
+    DEPENDS "HAVE_LIBTCMALLOC"
+    DEPENDS_ERROR ON "Failed to find tcmalloc library"
+)
+
 config_string(
     CC_OPTIMIZE_LEVEL
     "CC optimisation level"
