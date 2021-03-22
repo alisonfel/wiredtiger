@@ -10,8 +10,6 @@ cmake_minimum_required(VERSION 3.12.0)
 
 include(tools/cmake/helpers.cmake)
 
-set(exported_configs "")
-
 # WiredTiger config options
 
 config_choice(
@@ -97,6 +95,38 @@ config_choice(
         "gcc;SPINLOCK_GCC;"
         "msvc;SPINLOCK_MSVC;WT_WIN"
         "pthread_adaptive;SPINLOCK_PTHREAD_ADAPTIVE;HAVE_LIBPTHREAD"
+)
+
+config_bool(
+    ENABLE_LIBLZ4
+    "Build the lz4 compressor extension"
+    DEFAULT OFF
+    DEPENDS "HAVE_LIBLZ4"
+    DEPENDS_ERROR ON "Failed to find lz4 library"
+)
+
+config_bool(
+    ENABLE_LIBSNAPPY
+    "Build the snappy compressor extension"
+    DEFAULT OFF
+    DEPENDS "HAVE_LIBSNAPPY"
+    DEPENDS_ERROR ON "Failed to find snappy library"
+)
+
+config_bool(
+    ENABLE_LIBZ
+    "Build the zlib compressor extension"
+    DEFAULT OFF
+    DEPENDS "HAVE_LIBZ"
+    DEPENDS_ERROR ON "Failed to find zlib library"
+)
+
+config_bool(
+    ENABLE_LIBZSTD
+    "Build the libzstd compressor extension"
+    DEFAULT OFF
+    DEPENDS "HAVE_LIBZSTD"
+    DEPENDS_ERROR ON "Failed to find zstd library"
 )
 
 config_string(

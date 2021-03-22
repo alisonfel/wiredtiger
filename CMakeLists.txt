@@ -57,11 +57,11 @@ if(NOT ENABLE_STATIC)
     SET_PROPERTY(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)
 endif()
 
-#add_subdirectory(ext/compressors/lz4)
-#add_subdirectory(ext/compressors/nop)
-#add_subdirectory(ext/compressors/snappy)
-#add_subdirectory(ext/compressors/zlib)
-#add_subdirectory(ext/compressors/zstd)
+add_subdirectory(ext/compressors/lz4)
+add_subdirectory(ext/compressors/snappy)
+add_subdirectory(ext/compressors/zlib)
+add_subdirectory(ext/compressors/zstd)
+add_subdirectory(ext/compressors/nop)
 
 # Collect all the library sources we need to compile from the source filelist
 parse_filelist_source(${CMAKE_CURRENT_LIST_DIR}/dist/filelist wt_sources)
@@ -89,4 +89,20 @@ endif()
 
 if(HAVE_LIBDL)
     target_link_libraries(wiredtiger "dl")
+endif()
+
+if(HAVE_BUILTIN_EXTENSION_LZ4)
+    target_link_libraries(wiredtiger wiredtiger_lz4)
+endif()
+
+if(HAVE_BUILTIN_EXTENSION_SNAPPY)
+    target_link_libraries(wiredtiger wiredtiger_snappy)
+endif()
+
+if(HAVE_BUILTIN_EXTENSION_ZLIB)
+    target_link_libraries(wiredtiger wiredtiger_zlib)
+endif()
+
+if(HAVE_BUILTIN_EXTENSION_ZSTD)
+    target_link_libraries(wiredtiger wiredtiger_zstd)
 endif()

@@ -244,6 +244,34 @@ config_lib(
     FUNC "dlopen"
 )
 
+config_lib(
+    HAVE_LIBLZ4
+    "lz4 library exists"
+    LIB "lz4"
+    FUNC "LZ4_versionNumber"
+)
+
+config_lib(
+    HAVE_LIBSNAPPY
+    "snappy library exists"
+    LIB "snappy"
+    FUNC "snappy_compress"
+)
+
+config_lib(
+    HAVE_LIBZ
+    "zlib library exists"
+    LIB "z"
+    FUNC "zlibVersion"
+)
+
+config_lib(
+    HAVE_LIBZSTD
+    "zstd library exists"
+    LIB "zstd"
+    FUNC "ZSTD_versionString"
+)
+
 config_compile(
     HAVE_PTHREAD_COND_MONOTONIC
     "If pthread condition variables support monotonic clocks"
