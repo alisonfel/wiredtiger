@@ -29,7 +29,9 @@ add_subdirectory(encryptors/rotn)
 add_subdirectory(extractors/csv)
 
 # Build the storage_sources extensions
-add_subdirectory(storage_sources/local_store)
+if(WT_POSIX)
+    add_subdirectory(storage_sources/local_store)
+endif()
 
 # Build the test extensions
 add_subdirectory(test/fail_fs)

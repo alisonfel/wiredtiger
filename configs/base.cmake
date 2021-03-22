@@ -153,10 +153,12 @@ config_string(
     DEFAULT 0
 )
 
+
+string(TIMESTAMP config_date "%Y-%m-%d")
 config_string(
     VERSION_STRING
     "Version string for WiredTiger"
-    DEFAULT "\"WiredTiger 10.0.0 (Jan 1. 2021)\""
+    DEFAULT "\"WiredTiger 10.0.0 (${config_date})\""
 )
 
 if(HAVE_DIAGNOSTIC)

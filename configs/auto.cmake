@@ -8,11 +8,9 @@
 
 cmake_minimum_required(VERSION 3.12.0)
 
-set(exported_configs)
-
 include(tools/cmake/helpers.cmake)
 
-### Autoconf compatibility options
+### AutoConfigure-like options and checks
 
 ## Assert type sizes
 assert_type_size("size_t" 8)

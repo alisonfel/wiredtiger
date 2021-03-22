@@ -13,7 +13,9 @@ project(WiredTiger C ASM)
 include(tools/cmake/helpers.cmake)
 
 # TODO
+# TCMalloc link
 # Comments
+# Complete all POSIX platforms
 
 find_program(CCACHE_FOUND ccache)
 if(CCACHE_FOUND)
@@ -102,3 +104,6 @@ endif()
 if(HAVE_BUILTIN_EXTENSION_ZSTD)
     target_link_libraries(wiredtiger wiredtiger_zstd)
 endif()
+
+# Establish our install target configuration
+include(configs/install.cmake)
