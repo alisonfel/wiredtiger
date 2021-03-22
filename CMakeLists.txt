@@ -8,6 +8,12 @@
 
 cmake_minimum_required(VERSION 3.12.0)
 
+find_program(CCACHE_FOUND ccache)
+if(CCACHE_FOUND)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+endif(CCACHE_FOUND)
+
 project(WiredTiger C ASM)
 
 include(tools/cmake/helpers.cmake)
@@ -16,12 +22,6 @@ include(tools/cmake/helpers.cmake)
 # TCMalloc link
 # Comments
 # Complete all POSIX platforms
-
-find_program(CCACHE_FOUND ccache)
-if(CCACHE_FOUND)
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
-endif(CCACHE_FOUND)
 
 if(NOT WT_ARCH)
     # We will default defer to our callers host architecture as our target
