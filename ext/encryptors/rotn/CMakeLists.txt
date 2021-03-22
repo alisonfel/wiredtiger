@@ -8,13 +8,13 @@
 
 cmake_minimum_required(VERSION 3.12.0)
 
-project(nop_compression C)
+project(rotn_encrypt C)
 
-set(sources "nop_compress.c")
-add_library(wiredtiger_nop_compress SHARED ${sources})
+set(sources "rotn_encrypt.c")
+add_library(wiredtiger_rotn_encrypt MODULE ${sources})
 
 target_include_directories(
-    wiredtiger_nop_compress
+    wiredtiger_rotn_encrypt
     PRIVATE
         ${CMAKE_SOURCE_DIR}/src/include
         ${CMAKE_BINARY_DIR}/include

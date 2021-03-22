@@ -8,13 +8,13 @@
 
 cmake_minimum_required(VERSION 3.12.0)
 
-project(nop_compression C)
+project(reverse_collator C)
 
-set(sources "nop_compress.c")
-add_library(wiredtiger_nop_compress SHARED ${sources})
+set(sources "reverse_collator.c")
+add_library(wiredtiger_reverse_collator MODULE ${sources})
 
 target_include_directories(
-    wiredtiger_nop_compress
+    wiredtiger_reverse_collator
     PRIVATE
         ${CMAKE_SOURCE_DIR}/src/include
         ${CMAKE_BINARY_DIR}/include

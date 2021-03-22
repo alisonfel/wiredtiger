@@ -13,7 +13,6 @@ project(WiredTiger C ASM)
 include(tools/cmake/helpers.cmake)
 
 # TODO
-# Extensions etc
 # Comments
 
 find_program(CCACHE_FOUND ccache)
@@ -57,11 +56,8 @@ if(NOT ENABLE_STATIC)
     SET_PROPERTY(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)
 endif()
 
-add_subdirectory(ext/compressors/lz4)
-add_subdirectory(ext/compressors/snappy)
-add_subdirectory(ext/compressors/zlib)
-add_subdirectory(ext/compressors/zstd)
-add_subdirectory(ext/compressors/nop)
+# Include the extensions to the build
+add_subdirectory(ext)
 
 # Collect all the library sources we need to compile from the source filelist
 parse_filelist_source(${CMAKE_CURRENT_LIST_DIR}/dist/filelist wt_sources)

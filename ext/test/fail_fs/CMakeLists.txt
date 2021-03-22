@@ -8,13 +8,13 @@
 
 cmake_minimum_required(VERSION 3.12.0)
 
-project(nop_compression C)
+project(fail_fs C)
 
-set(sources "nop_compress.c")
-add_library(wiredtiger_nop_compress SHARED ${sources})
+set(sources "fail_fs.c")
+add_library(wiredtiger_fail_fs MODULE ${sources})
 
 target_include_directories(
-    wiredtiger_nop_compress
+    wiredtiger_fail_fs
     PRIVATE
         ${CMAKE_SOURCE_DIR}/src/include
         ${CMAKE_BINARY_DIR}/include

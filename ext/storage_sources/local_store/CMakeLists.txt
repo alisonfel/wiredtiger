@@ -8,13 +8,13 @@
 
 cmake_minimum_required(VERSION 3.12.0)
 
-project(nop_compression C)
+project(local_store C)
 
-set(sources "nop_compress.c")
-add_library(wiredtiger_nop_compress SHARED ${sources})
+set(sources "local_store.c")
+add_library(wiredtiger_local_store MODULE ${sources})
 
 target_include_directories(
-    wiredtiger_nop_compress
+    wiredtiger_local_store
     PRIVATE
         ${CMAKE_SOURCE_DIR}/src/include
         ${CMAKE_BINARY_DIR}/include
