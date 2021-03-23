@@ -22,7 +22,7 @@ set_property(
 # Set the version property of the wiredtiger library so we can export a versioned install
 set_target_properties(wiredtiger PROPERTIES VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 
-# Install wiredtiger library target
+# Install the wiredtiger library target
 install(TARGETS wiredtiger
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}

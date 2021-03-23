@@ -8,6 +8,7 @@
 
 cmake_minimum_required(VERSION 3.12.0)
 
+# Try to use CCACHE if available - speeds up build times
 find_program(CCACHE_FOUND ccache)
 if(CCACHE_FOUND)
     set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
@@ -18,12 +19,10 @@ project(WiredTiger C ASM)
 
 include(build_cmake/helpers.cmake)
 
-# TODO
-# Comments
-# Complete all POSIX platforms
-
+# If the use doesn't manually specify the target ARCH and OS (i.e not cross-compiling)
+# we will infer the target from the host
 if(NOT WT_ARCH)
-    # We will default defer to our callers host architecture as our target
+    # Defer to our hosts architecture as our target architecture
     if ("${CMAKE_HOST_SYSTEM_PROCESSOR}" MATCHES "^(x86_64|i686|i386)$")
         set(WT_ARCH "x86")
     else()
@@ -31,7 +30,7 @@ if(NOT WT_ARCH)
     endif()
 endif()
 if(NOT WT_OS)
-    # We will default defer to the host OS as our target
+    # Defer to our hosts OS as our target OS
     string(TOLOWER "${CMAKE_HOST_SYSTEM_NAME}" host_os)
     set(WT_OS "${host_os}")
 endif()
@@ -39,14 +38,18 @@ endif()
 if(NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/build_cmake/configs/${WT_ARCH}/${WT_OS}/config.cmake")
     message(FATAL_ERROR "build_cmake/configs/${WT_ARCH}/${WT_OS}/config.cmake does not exist")
 endif()
+
+# Load any configuration variables special to our target
 include(build_cmake/configs/${WT_ARCH}/${WT_OS}/config.cmake)
+# Load auto-configure variables (e.g. environment-related configs)
 include(build_cmake/configs/auto.cmake)
+# Load WiredTiger related configuration options
 include(build_cmake/configs/base.cmake)
 
 if(ENABLE_STRICT)
     if("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
         include(build_cmake/strict/gcc_strict.cmake)
-    elseif("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
+    elseif("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_C_COMPILER_ID}" STREQUAL "AppleClang")
         include(build_cmake/strict/clang_strict.cmake)
     endif()
 endif()
@@ -76,6 +79,7 @@ target_include_directories(
     PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/config ${CMAKE_CURRENT_LIST_DIR}/src/include
 )
 
+# Ensure we link any available library dependencies to our wiredtiger target
 if(HAVE_LIBPTHREAD)
     target_link_libraries(wiredtiger "pthread")
 endif()

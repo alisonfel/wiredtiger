@@ -10,7 +10,7 @@ cmake_minimum_required(VERSION 3.12.0)
 
 include(build_cmake/helpers.cmake)
 
-### AutoConfigure-like options and checks
+### Auto configure options and checks that we can infer from our toolchain environment
 
 ## Assert type sizes
 assert_type_size("size_t" 8)
@@ -31,15 +31,14 @@ endif()
 
 config_string(
     off_t_decl
-    "off_t type declaration (Autoconf backwards compatibility config)"
-    DEFAULT
-    "typedef off_t wt_off_t\\;"
+    "off_t type declaration"
+    DEFAULT "typedef off_t wt_off_t\\;"
     INTERNAL
 )
 
 config_string(
     uintprt_t_decl
-    "uintptr_t type declaration (Autoconf backwards compatibility config)"
+    "uintptr_t type declaration"
     DEFAULT "${default_uintmax_def}"
     INTERNAL
 )

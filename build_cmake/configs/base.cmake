@@ -10,7 +10,7 @@ cmake_minimum_required(VERSION 3.12.0)
 
 include(build_cmake/helpers.cmake)
 
-# WiredTiger config options
+# WiredTiger-related configuration options
 
 config_choice(
     WT_ARCH
@@ -52,7 +52,7 @@ config_bool(
 
 config_bool(
     HAVE_ATTACH
-    ""
+    "Enable to pause for debugger attach on failure"
     DEFAULT OFF
 )
 
@@ -70,7 +70,7 @@ config_bool(
 
 config_bool(
     ENABLE_PYTHON
-    ""
+    "Configure the python API"
     DEFAULT OFF
     DEPENDS "NOT ENABLE_STATIC"
 )
@@ -102,6 +102,8 @@ config_bool(
     "Build the lz4 compressor extension"
     DEFAULT OFF
     DEPENDS "HAVE_LIBLZ4"
+    # Specifically throw a fatal error if a user tries to enable the lz4 compressor without
+    # actually having the library available (as opposed to silently defaulting to OFF)
     DEPENDS_ERROR ON "Failed to find lz4 library"
 )
 
@@ -110,6 +112,8 @@ config_bool(
     "Build the snappy compressor extension"
     DEFAULT OFF
     DEPENDS "HAVE_LIBSNAPPY"
+    # Specifically throw a fatal error if a user tries to enable the snappy compressor without
+    # actually having the library available (as opposed to silently defaulting to OFF)
     DEPENDS_ERROR ON "Failed to find snappy library"
 )
 
@@ -118,6 +122,8 @@ config_bool(
     "Build the zlib compressor extension"
     DEFAULT OFF
     DEPENDS "HAVE_LIBZ"
+    # Specifically throw a fatal error if a user tries to enable the zlib compressor without
+    # actually having the library available (as opposed to silently defaulting to OFF)
     DEPENDS_ERROR ON "Failed to find zlib library"
 )
 
@@ -126,6 +132,8 @@ config_bool(
     "Build the libzstd compressor extension"
     DEFAULT OFF
     DEPENDS "HAVE_LIBZSTD"
+    # Specifically throw a fatal error if a user tries to enable the zstd compressor without
+    # actually having the library available (as opposed to silently defaulting to OFF)
     DEPENDS_ERROR ON "Failed to find zstd library"
 )
 
@@ -134,6 +142,8 @@ config_bool(
     "Use TCMalloc as the backend allocator"
     DEFAULT OFF
     DEPENDS "HAVE_LIBTCMALLOC"
+    # Specifically throw a fatal error if a user tries to enable the tcmalloc allocator without
+    # actually having the library available (as opposed to silently defaulting to OFF)
     DEPENDS_ERROR ON "Failed to find tcmalloc library"
 )
 
