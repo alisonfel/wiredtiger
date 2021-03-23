@@ -8,5 +8,6 @@
 
 cmake_minimum_required(VERSION 3.12.0)
 
-set(WT_ARCH "X86" CACHE STRING "")
-set(WT_OS "Windows" CACHE STRING "")
+set(WT_ARCH "x86" CACHE STRING "")
+set(WT_OS "darwin" CACHE STRING "")
+set(WT_POSIX ON CACHE BOOL "")
