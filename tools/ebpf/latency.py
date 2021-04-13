@@ -4,64 +4,22 @@ from __future__ import print_function
 from bcc import BPF
 from time import sleep, strftime
 import argparse
-import signal
 import json
+import signal
+from datetime import datetime
 
 # This functionality is heavily based off a program already in the BCC repo.
 # https://github.com/iovisor/bcc/blob/master/tools/funclatency.py
 
 parser = argparse.ArgumentParser(
-    description="Time functions and print latency as a histogram",
+    description="Function Latency Statistics",
     formatter_class=argparse.RawDescriptionHelpFormatter)
-parser.add_argument("-p", "--pid", type=int,
-    help="trace this PID only")
-parser.add_argument("-i", "--interval", type=int,
-    help="summary interval, in seconds")
-parser.add_argument("-d", "--duration", type=int,
-    help="total duration of trace, in seconds")
-parser.add_argument("-T", "--timestamp", action="store_true",
-    help="include timestamp on output")
-parser.add_argument("-u", "--microseconds", action="store_true",
-    help="microsecond histogram")
-parser.add_argument("-m", "--milliseconds", action="store_true",
-    help="millisecond histogram")
-parser.add_argument("-F", "--function", action="store_true",
-    help="show a separate histogram per function")
-parser.add_argument("-r", "--regexp", action="store_true",
-    help="use regular expressions. Default is \"*\" wildcards only.")
-parser.add_argument("-v", "--verbose", action="store_true",
-    help="print the BPF program (for debugging purposes)")
-parser.add_argument("pattern",
-    help="search expression for functions")
-parser.add_argument("--ebpf", action="store_true",
-    help=argparse.SUPPRESS)
+parser.add_argument("pattern", help="search expression for functions")
 args = parser.parse_args()
-if args.duration and not args.interval:
-    args.interval = args.duration
-if not args.interval:
-    args.interval = 99999999
 
-def bail(error):
-    print("Error: " + error)
-    exit(1)
-
-parts = args.pattern.split(':')
-if len(parts) == 1:
-    library = None
-    pattern = args.pattern
-elif len(parts) == 2:
-    library = parts[0]
-    libpath = BPF.find_library(library) or BPF.find_exe(library)
-    if not libpath:
-        bail("can't resolve library %s" % library)
-    library = libpath
-    pattern = parts[1]
-else:
-    bail("unrecognized pattern format '%s'" % pattern)
-
-if not args.regexp:
-    pattern = pattern.replace('*', '.*')
-    pattern = '^' + pattern + '$'
+pattern = args.pattern
+interval = 99999999
+function_pattern = pattern
 
 # define BPF program
 bpf_header  = """
@@ -115,7 +73,6 @@ int trace_func_return(struct pt_regs *ctx)
     if (sum) lock_xadd(sum, delta);
     u64 *cnts = avg.lookup(&cnt);
     if (cnts) lock_xadd(cnts, 1);
-    FACTOR
     // store as histogram
     STORE
 
@@ -133,143 +90,109 @@ int trace_func_return(struct pt_regs *ctx)
 }
 """
 
-# do we need to store the IP and pid for each invocation?
-need_key = args.function or (library and not args.pid)
-
-# code substitutions
-if args.pid:
-    bpf_text = bpf_text.replace('FILTER',
-        'if (tgid != %d) { return 0; }' % args.pid)
-else:
-    bpf_text = bpf_text.replace('FILTER', '')
-if args.milliseconds:
-    bpf_text = bpf_text.replace('FACTOR', 'delta /= 1000000;')
-    label = "msecs"
-elif args.microseconds:
-    bpf_text = bpf_text.replace('FACTOR', 'delta /= 1000;')
-    label = "usecs"
-else:
-    bpf_text = bpf_text.replace('FACTOR', '')
-    label = "nsecs"
-if need_key:
-    bpf_text = bpf_text.replace('STORAGE', 'BPF_HASH(ipaddr, u32);\n' +
-        'BPF_HISTOGRAM(dist, hist_key_t);')
-    # stash the IP on entry, as on return it's kretprobe_trampoline:
-    bpf_text = bpf_text.replace('ENTRYSTORE',
-        'u64 ip = PT_REGS_IP(ctx); ipaddr.update(&pid, &ip);')
-    pid = '-1' if not library else 'tgid'
-    bpf_text = bpf_text.replace('STORE',
-        """
-    u64 ip, *ipp = ipaddr.lookup(&pid);
-    if (ipp) {
-        ip = *ipp;
-        hist_key_t key;
-        key.key.ip = ip;
-        key.key.pid = %s;
-        key.slot = bpf_log2l(delta);
-        dist.increment(key);
-        ipaddr.delete(&pid);
-    }
-        """ % pid)
-else:
-    bpf_text = bpf_text.replace('STORAGE', 'BPF_HISTOGRAM(dist);')
-    bpf_text = bpf_text.replace('ENTRYSTORE', '')
-    bpf_text = bpf_text.replace('STORE',
-        'dist.increment(bpf_log2l(delta));')
-if args.verbose or args.ebpf:
-    print(bpf_text)
-    if args.ebpf:
-        exit()
+# code substitutions 
+bpf_text = bpf_text.replace('FILTER', '')
+bpf_text = bpf_text.replace('STORAGE', 'BPF_HISTOGRAM(dist);')
+bpf_text = bpf_text.replace('ENTRYSTORE', '')
+bpf_text = bpf_text.replace('STORE',
+    'dist.increment(bpf_log2l(delta));')
 
 # signal handler
 def signal_ignore(signal, frame):
     print()
 
-def export_to_json(avg, total):
-    data = {}
-    data['f_latencies'] = []
-    data['f_latencies'].append({
-        "function_name": "cursor",
-        "avg_latency": avg,
-        "total_latency": total
-    })
+def export_to_json(pattern, latency_counts, latency_bucket_labels, avg, total):
+    latency_data = {}
+    for i in range(len(latency_counts)):
+        latency_data[latency_bucket_labels[i]] = latency_counts[i]
+    
+    latency_buckets = json.dumps(latency_data)
+    current_time = datetime.utcnow().isoformat()[:-3]+'Z'
 
-    with open('latency.txt', 'w') as outfile:
+    data = {
+        "version" : "WiredTiger 10.0.0",
+        "localTime": current_time,
+        "wiredTigerEBPF" : {
+            "function_name": pattern,
+            "bucket_counts": latency_buckets,
+            "avg_latency": avg,
+            "total_latency": total
+        }
+    }
+
+    print(data)
+
+    with open('latency.stat', 'w') as outfile:
         json.dump(data, outfile)
 
-# load BPF program
-b = BPF(text=bpf_header + bpf_text)
+def calculate_latencies(function_pattern):
+    # load BPF program
+    b = BPF(text=bpf_header + bpf_text)
 
-# attach probes
-library = "/home/ubuntu/work/wiredtiger/build_posix/.libs/libwiredtiger-10.0.0.so"
+    # attach probes
+    library = "/home/ubuntu/work/wiredtiger/build_posix/.libs/libwiredtiger-10.0.0.so"
 
-b.attach_uprobe(name=library, sym_re=pattern, fn_name="trace_func_entry",
-                pid=args.pid or -1)
-b.attach_uretprobe(name=library, sym_re=pattern,
-                    fn_name="trace_func_return", pid=args.pid or -1)
-matched = b.num_open_uprobes()
+    b.attach_uprobe(name=library, sym_re=function_pattern, fn_name="trace_func_entry",
+                    pid=-1)
+    b.attach_uretprobe(name=library, sym_re=function_pattern,
+                        fn_name="trace_func_return", pid=-1)
+    matched = b.num_open_uprobes()
 
-if matched == 0:
-    print("0 functions matched by \"%s\". Exiting." % args.pattern)
-    exit()
-
-# header
-print("Tracing %d functions for \"%s\"... Hit Ctrl-C to end." %
-    (matched / 2, args.pattern))
-
-# output
-def print_section(key):
-    if not library:
-        return BPF.sym(key[0], -1)
-    else:
-        return "%s [%d]" % (BPF.sym(key[0], key[1]), key[1])
-
-exiting = 0 if args.interval else 1
-seconds = 0
-dist = b.get_table("dist")
-
-while (1):
-    try:
-        sleep(args.interval)
-        seconds += args.interval
-    except KeyboardInterrupt:
-        exiting = 1
-        # as cleanup can take many seconds, trap Ctrl-C:
-        signal.signal(signal.SIGINT, signal_ignore)
-    if args.duration and seconds >= args.duration:
-        exiting = 1
-
-    print()
-    if args.timestamp:
-        print("%-8s\n" % strftime("%H:%M:%S"), end="")
-
-    if need_key:
-        dist.print_log2_hist(label, "Function", section_print_fn=print_section,
-            bucket_fn=lambda k: (k.ip, k.pid))
-    else:
-        dist.print_log2_hist(label)
-        dist.print_linear_hist(label)
-    dist.clear()
-
-    total  = b['avg'][0].value
-    counts = b['avg'][1].value
-
-    print("PRINTING LATENCY BUCKETS")
-
-    for i in range(20):
-        print(b['latencies'][i].value)
-        # print(latency_bucket_labels[i], b['latencies'][i].value)
-    
-    if counts > 0:
-        if label == 'msecs':
-            total /= 1000000
-        elif label == 'usecs':
-            total /= 1000
-        avg = total/counts
-        print("\navg = %ld %s, total: %ld %s, count: %ld\n" %(total/counts, label, total, label, counts))
-
-    if exiting:
-        print("Detaching...")
-        export_to_json(avg, total)
+    if matched == 0:
+        print("0 functions matched by \"%s\". Exiting." % function_pattern)
         exit()
+
+    # header
+    print("Tracing %d functions for \"%s\"... Hit Ctrl-C to end." %
+        (matched / 2, function_pattern))
+
+    # output
+    def print_section(key):
+        if not library:
+            return BPF.sym(key[0], -1)
+        else:
+            return "%s [%d]" % (BPF.sym(key[0], key[1]), key[1])
+
+    exiting = 0 if interval else 1
+    seconds = 0
+    dist = b.get_table("dist")
+
+    while (1):
+        try:
+            sleep(interval)
+            seconds += interval
+        except KeyboardInterrupt:
+            exiting = 1
+            # as cleanup can take many seconds, trap Ctrl-C:
+            signal.signal(signal.SIGINT, signal_ignore)
+
+        print()
+
+        dist.print_log2_hist()
+        dist.clear()
+
+        total  = b['avg'][0].value
+        counts = b['avg'][1].value
+
+        print()
+        print("PRINTING LATENCY STATISTICS")
+        latency_counts = []
+        latency_bucket_labels = ["0-1", "2-3", "4-7", "8-15", "16-31",
+                                "32-63", "64-127", "128-255", "256-511", "512-1023", 
+                                "1024-2047", "2048-4095", "4096-8191", "8192-16383", "16384-32767", 
+                                "32768-65535", "65536-131071", "131072-262143", "262144-524287", "524288+"]
+
+        for i in range(20):
+            latency_counts.append(b['latencies'][i].value)
+            print(b['latencies'][i].value, latency_bucket_labels[i] + " secs")
         
+        if counts > 0:
+            avg = total/counts
+            print("\navg = %ld nsecs, total: %ld nsecs, count: %ld\n" %(total/counts, total, counts))
+
+        if exiting:
+            print("Detaching...")
+            export_to_json(function_pattern, latency_counts, latency_bucket_labels, avg, total)
+            exit()
+
+calculate_latencies(function_pattern)
