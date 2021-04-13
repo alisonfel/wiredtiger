@@ -1,9 +1,13 @@
-#!/usr/bin/pythonfrom __future__ import print_function
+ #!/usr/bin/python
+
+from __future__ import print_function
 from bcc import BPF
 from time import sleep, strftime
 import argparse
 import signal
-import json# This functionality is heavily based off a program already in the BCC repo.
+import json
+
+# This functionality is heavily based off a program already in the BCC repo.
 # https://github.com/iovisor/bcc/blob/master/tools/funclatency.py
 
 parser = argparse.ArgumentParser(
@@ -32,13 +36,16 @@ parser.add_argument("pattern",
 parser.add_argument("--ebpf", action="store_true",
     help=argparse.SUPPRESS)
 args = parser.parse_args()
-
 if args.duration and not args.interval:
     args.interval = args.duration
 if not args.interval:
-    args.interval = 99999999def bail(error):
+    args.interval = 99999999
+
+def bail(error):
     print("Error: " + error)
-    exit(1)parts = args.pattern.split(':')
+    exit(1)
+
+parts = args.pattern.split(':')
 if len(parts) == 1:
     library = None
     pattern = args.pattern
@@ -50,10 +57,13 @@ elif len(parts) == 2:
     library = libpath
     pattern = parts[1]
 else:
-    bail("unrecognized pattern format '%s'" % pattern)if not args.regexp:
-    pattern = pattern.replace('*', '.*')
-    pattern = '^' + pattern + '$'# define BPF program
+    bail("unrecognized pattern format '%s'" % pattern)
 
+if not args.regexp:
+    pattern = pattern.replace('*', '.*')
+    pattern = '^' + pattern + '$'
+
+# define BPF program
 bpf_header  = """
 #ifdef asm_inline
 #undef asm_inline
@@ -107,7 +117,9 @@ int trace_func_return(struct pt_regs *ctx)
     if (cnts) lock_xadd(cnts, 1);
     FACTOR
     // store as histogram
-    STORE    // Manually split into 20 time buckets.
+    STORE
+
+    // Manually split into 20 time buckets.
     int latbucket = bpf_log2l(delta);
     if (latbucket > 19) {
         latbucket = 19;
@@ -120,9 +132,11 @@ int trace_func_return(struct pt_regs *ctx)
     return 0;
 }
 """
-# do we need to store the IP and pid for each invocation?
 
-need_key = args.function or (library and not args.pid)# code substitutions
+# do we need to store the IP and pid for each invocation?
+need_key = args.function or (library and not args.pid)
+
+# code substitutions
 if args.pid:
     bpf_text = bpf_text.replace('FILTER',
         'if (tgid != %d) { return 0; }' % args.pid)
@@ -165,8 +179,9 @@ else:
 if args.verbose or args.ebpf:
     print(bpf_text)
     if args.ebpf:
-        exit()# signal handler
+        exit()
 
+# signal handler
 def signal_ignore(signal, frame):
     print()
 
@@ -177,30 +192,42 @@ def export_to_json(avg, total):
         "function_name": "cursor",
         "avg_latency": avg,
         "total_latency": total
-    })    with open('latency.txt', 'w') as outfile:
-        json.dump(data, outfile)# load BPF program
+    })
 
-b = BPF(text=bpf_header + bpf_text)# attach probes
-library = "/home/ubuntu/work/wiredtiger/build_posix/.libs/libwiredtiger-10.0.0.so"b.attach_uprobe(name=library, sym_re=pattern, fn_name="trace_func_entry",
+    with open('latency.txt', 'w') as outfile:
+        json.dump(data, outfile)
+
+# load BPF program
+b = BPF(text=bpf_header + bpf_text)
+
+# attach probes
+library = "/home/ubuntu/work/wiredtiger/build_posix/.libs/libwiredtiger-10.0.0.so"
+
+b.attach_uprobe(name=library, sym_re=pattern, fn_name="trace_func_entry",
                 pid=args.pid or -1)
 b.attach_uretprobe(name=library, sym_re=pattern,
                     fn_name="trace_func_return", pid=args.pid or -1)
-matched = b.num_open_uprobes()if matched == 0:
+matched = b.num_open_uprobes()
+
+if matched == 0:
     print("0 functions matched by \"%s\". Exiting." % args.pattern)
-    exit()# header
+    exit()
 
+# header
 print("Tracing %d functions for \"%s\"... Hit Ctrl-C to end." %
-    (matched / 2, args.pattern))# output
+    (matched / 2, args.pattern))
 
+# output
 def print_section(key):
     if not library:
         return BPF.sym(key[0], -1)
     else:
-        return "%s [%d]" % (BPF.sym(key[0], key[1]), key[1])exiting = 0 if args.interval else 1
+        return "%s [%d]" % (BPF.sym(key[0], key[1]), key[1])
 
+exiting = 0 if args.interval else 1
 seconds = 0
-
 dist = b.get_table("dist")
+
 while (1):
     try:
         sleep(args.interval)
@@ -210,24 +237,39 @@ while (1):
         # as cleanup can take many seconds, trap Ctrl-C:
         signal.signal(signal.SIGINT, signal_ignore)
     if args.duration and seconds >= args.duration:
-        exiting = 1    print()
+        exiting = 1
+
+    print()
     if args.timestamp:
-        print("%-8s\n" % strftime("%H:%M:%S"), end="")    if need_key:
+        print("%-8s\n" % strftime("%H:%M:%S"), end="")
+
+    if need_key:
         dist.print_log2_hist(label, "Function", section_print_fn=print_section,
             bucket_fn=lambda k: (k.ip, k.pid))
     else:
         dist.print_log2_hist(label)
         dist.print_linear_hist(label)
-    dist.clear()    total  = b['avg'][0].value
-    counts = b['avg'][1].value    print("PRINTING LATENCY BUCKETS")    for i in range(20):
+    dist.clear()
+
+    total  = b['avg'][0].value
+    counts = b['avg'][1].value
+
+    print("PRINTING LATENCY BUCKETS")
+
+    for i in range(20):
         print(b['latencies'][i].value)
-        # print(latency_bucket_labels[i], b['latencies'][i].value)    if counts > 0:
+        # print(latency_bucket_labels[i], b['latencies'][i].value)
+    
+    if counts > 0:
         if label == 'msecs':
             total /= 1000000
         elif label == 'usecs':
             total /= 1000
         avg = total/counts
-        print("\navg = %ld %s, total: %ld %s, count: %ld\n" %(total/counts, label, total, label, counts))    if exiting:
+        print("\navg = %ld %s, total: %ld %s, count: %ld\n" %(total/counts, label, total, label, counts))
+
+    if exiting:
         print("Detaching...")
         export_to_json(avg, total)
         exit()
+        
