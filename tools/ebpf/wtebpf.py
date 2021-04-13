@@ -5,6 +5,7 @@ from bcc import BPF
 import argparse
 import threading, queue
 import logging, time
+from latency import calculate_latencies
 
 parser = argparse.ArgumentParser(
     description="Trace WiredTiger with eBPF",
@@ -34,6 +35,7 @@ def latency_thread(functions, event):
     print("Starting latency stat thread for functions [%s]" % functions)
     while not event.is_set():
        time.sleep(1)
+    calculate_latencies(functions[0])
     print("latency stat thread exiting")
 
 stat_config = {}

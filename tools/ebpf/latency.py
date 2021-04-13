@@ -11,121 +11,121 @@ from datetime import datetime
 # This functionality is heavily based off a program already in the BCC repo.
 # https://github.com/iovisor/bcc/blob/master/tools/funclatency.py
 
-parser = argparse.ArgumentParser(
-    description="Function Latency Statistics",
-    formatter_class=argparse.RawDescriptionHelpFormatter)
-parser.add_argument("pattern", help="search expression for functions")
-args = parser.parse_args()
+def calculate_latencies(function_pattern):
+    # parser = argparse.ArgumentParser(
+    #     description="Function Latency Statistics",
+    #     formatter_class=argparse.RawDescriptionHelpFormatter)
+    # parser.add_argument("pattern", help="search expression for functions")
+    # args = parser.parse_args()
 
-pattern = args.pattern
-interval = 99999999
-function_pattern = pattern
+    # pattern = args.pattern
+    interval = 99999999
+    # function_pattern = pattern
 
-# define BPF program
-bpf_header  = """
-#ifdef asm_inline
-#undef asm_inline
-#define asm_inline asm
-#endif
-"""
+    # define BPF program
+    bpf_header  = """
+    #ifdef asm_inline
+    #undef asm_inline
+    #define asm_inline asm
+    #endif
+    """
 
-bpf_text = """
-#include <uapi/linux/ptrace.h>
-typedef struct ip_pid {
-    u64 ip;
-    u64 pid;
-} ip_pid_t;
-typedef struct hist_key {
-    ip_pid_t key;
-    u64 slot;
-} hist_key_t;
-BPF_HASH(start, u32);
-BPF_ARRAY(avg, u64, 2);
-BPF_ARRAY(latencies, u64, 20);
-STORAGE
-int trace_func_entry(struct pt_regs *ctx)
-{
-    u64 pid_tgid = bpf_get_current_pid_tgid();
-    u32 pid = pid_tgid;
-    u32 tgid = pid_tgid >> 32;
-    u64 ts = bpf_ktime_get_ns();
-    FILTER
-    ENTRYSTORE
-    start.update(&pid, &ts);
-    return 0;
-}
-int trace_func_return(struct pt_regs *ctx)
-{
-    u64 *tsp, delta;
-    u64 pid_tgid = bpf_get_current_pid_tgid();
-    u32 pid = pid_tgid;
-    u32 tgid = pid_tgid >> 32;
-    // calculate delta time
-    tsp = start.lookup(&pid);
-    if (tsp == 0) {
-        return 0;   // missed start
-    }
-    delta = bpf_ktime_get_ns() - *tsp;
-    start.delete(&pid);
-    u32 lat = 0;
-    u32 cnt = 1;
-    u64 *sum = avg.lookup(&lat);
-    if (sum) lock_xadd(sum, delta);
-    u64 *cnts = avg.lookup(&cnt);
-    if (cnts) lock_xadd(cnts, 1);
-    // store as histogram
-    STORE
-
-    // Manually split into 20 time buckets.
-    int latbucket = bpf_log2l(delta);
-    if (latbucket > 19) {
-        latbucket = 19;
-    }
-    u64 *latcount = latencies.lookup(&latbucket);
-    if (!latcount) {
+    bpf_text = """
+    #include <uapi/linux/ptrace.h>
+    typedef struct ip_pid {
+        u64 ip;
+        u64 pid;
+    } ip_pid_t;
+    typedef struct hist_key {
+        ip_pid_t key;
+        u64 slot;
+    } hist_key_t;
+    BPF_HASH(start, u32);
+    BPF_ARRAY(avg, u64, 2);
+    BPF_ARRAY(latencies, u64, 20);
+    STORAGE
+    int trace_func_entry(struct pt_regs *ctx)
+    {
+        u64 pid_tgid = bpf_get_current_pid_tgid();
+        u32 pid = pid_tgid;
+        u32 tgid = pid_tgid >> 32;
+        u64 ts = bpf_ktime_get_ns();
+        FILTER
+        ENTRYSTORE
+        start.update(&pid, &ts);
         return 0;
     }
-    (*latcount)++;
-    return 0;
-}
-"""
-
-# code substitutions 
-bpf_text = bpf_text.replace('FILTER', '')
-bpf_text = bpf_text.replace('STORAGE', 'BPF_HISTOGRAM(dist);')
-bpf_text = bpf_text.replace('ENTRYSTORE', '')
-bpf_text = bpf_text.replace('STORE',
-    'dist.increment(bpf_log2l(delta));')
-
-# signal handler
-def signal_ignore(signal, frame):
-    print()
-
-def export_to_json(pattern, latency_counts, latency_bucket_labels, avg, total):
-    latency_data = {}
-    for i in range(len(latency_counts)):
-        latency_data[latency_bucket_labels[i]] = latency_counts[i]
-    
-    latency_buckets = json.dumps(latency_data)
-    current_time = datetime.utcnow().isoformat()[:-3]+'Z'
-
-    data = {
-        "version" : "WiredTiger 10.0.0",
-        "localTime": current_time,
-        "wiredTigerEBPF" : {
-            "function_name": pattern,
-            "bucket_counts": latency_buckets,
-            "avg_latency": avg,
-            "total_latency": total
+    int trace_func_return(struct pt_regs *ctx)
+    {
+        u64 *tsp, delta;
+        u64 pid_tgid = bpf_get_current_pid_tgid();
+        u32 pid = pid_tgid;
+        u32 tgid = pid_tgid >> 32;
+        // calculate delta time
+        tsp = start.lookup(&pid);
+        if (tsp == 0) {
+            return 0;   // missed start
         }
+        delta = bpf_ktime_get_ns() - *tsp;
+        start.delete(&pid);
+        u32 lat = 0;
+        u32 cnt = 1;
+        u64 *sum = avg.lookup(&lat);
+        if (sum) lock_xadd(sum, delta);
+        u64 *cnts = avg.lookup(&cnt);
+        if (cnts) lock_xadd(cnts, 1);
+        // store as histogram
+        STORE
+
+        // Manually split into 20 time buckets.
+        int latbucket = bpf_log2l(delta);
+        if (latbucket > 19) {
+            latbucket = 19;
+        }
+        u64 *latcount = latencies.lookup(&latbucket);
+        if (!latcount) {
+            return 0;
+        }
+        (*latcount)++;
+        return 0;
     }
+    """
 
-    print(data)
+    # code substitutions 
+    bpf_text = bpf_text.replace('FILTER', '')
+    bpf_text = bpf_text.replace('STORAGE', 'BPF_HISTOGRAM(dist);')
+    bpf_text = bpf_text.replace('ENTRYSTORE', '')
+    bpf_text = bpf_text.replace('STORE',
+        'dist.increment(bpf_log2l(delta));')
 
-    with open('latency.stat', 'w') as outfile:
-        json.dump(data, outfile)
+    # signal handler
+    def signal_ignore(signal, frame):
+        print()
 
-def calculate_latencies(function_pattern):
+    def export_to_json(pattern, latency_counts, latency_bucket_labels, avg, total):
+        latency_data = {}
+        for i in range(len(latency_counts)):
+            latency_data[latency_bucket_labels[i]] = latency_counts[i]
+        
+        latency_buckets = json.dumps(latency_data)
+        current_time = datetime.utcnow().isoformat()[:-3]+'Z'
+
+        data = {
+            "version" : "WiredTiger 10.0.0",
+            "localTime": current_time,
+            "wiredTigerEBPF" : {
+                "function_name": pattern,
+                "bucket_counts": latency_buckets,
+                "avg_latency": avg,
+                "total_latency": total
+            }
+        }
+
+        print(data)
+
+        with open('latency.stat', 'w') as outfile:
+            json.dump(data, outfile)
+
     # load BPF program
     b = BPF(text=bpf_header + bpf_text)
 
@@ -195,4 +195,5 @@ def calculate_latencies(function_pattern):
             export_to_json(function_pattern, latency_counts, latency_bucket_labels, avg, total)
             exit()
 
-calculate_latencies(function_pattern)
+function_string = "__wt_open_cursor"
+calculate_latencies(function_string)
