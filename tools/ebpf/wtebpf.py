@@ -6,6 +6,7 @@ import argparse
 import threading, queue
 import logging, time
 from latency import calculate_latencies
+import stat_stacktrace
 
 parser = argparse.ArgumentParser(
     description="Trace WiredTiger with eBPF",
@@ -17,21 +18,14 @@ args = parser.parse_args()
 
 supported_stats = ['frequency','latency','stack']
 
-def frequency_thread(functions, event):
-    # datetime.utcnow().isoformat()[:-3]+'Z'
-    # {"version":"WiredTiger 10.0.0","localTime":"2021-04-09T02:41:26.000Z","wiredTigerEBPF":{blah}} 
+def frequency_thread(functions, lib, event):
+    # {"version":"WiredTiger 10.0.0","localTime":"2021-04-09T02:41:26.000Z","wiredTigerEBPF":{blah}}
     print("Starting frequency stat thread for functions [%s]" % functions)
     while not event.is_set():
        time.sleep(1)
     print("frequency stat thread exiting")
 
-def stack_thread(functions, event):
-    print("Starting stack stat thread for functions [%s]" % functions)
-    while not event.is_set():
-       time.sleep(1)
-    print("stack stat thread exiting")
-
-def latency_thread(functions, event):
+def latency_thread(functions, lib, event):
     print("Starting latency stat thread for functions [%s]" % functions)
     while not event.is_set():
        time.sleep(1)
@@ -70,8 +64,8 @@ for stat,functions in stat_config.items():
     elif stat == 'latency':
         target_function = latency_thread
     else:
-        target_function = stack_thread
-    stat_thread = threading.Thread(target=target_function, args=(functions,exit_event,))
+        target_function = stat_stacktrace.stackTraceThread
+    stat_thread = threading.Thread(target=target_function, args=(functions,args.wt_lib,exit_event,))
     stat_threads.append(stat_thread)
     stat_thread.start()
 

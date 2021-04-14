@@ -33,7 +33,7 @@ def print_event(cpu, data, size):
 
 u = USDT(path=sys.argv[1])
 u.enable_probe(probe="wt_open_cursor", fn_name="do_open_cursor")
-b = BPF(text=bpf_text, usdt_contexts=[u], cflags=["-include","asm_redef.h"])
+b = BPF(text=bpf_text, usdt_contexts=[u], cflags=["-include","../include/asm_redef.h"])
 b["events"].open_perf_buffer(print_event)
 
 while 1:
