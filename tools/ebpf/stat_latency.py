@@ -54,20 +54,20 @@ class LatencyTrace():
             latency_bucket = nbuckets - 1
 
         self.buckets[func_name][latency_bucket] += 1
-        current_time = datetime.utcnow().isoformat()[:-3]+'Z'
 
         latency_data = {}
         for i in range(nbuckets):
             latency_data[latency_bucket_labels[i]] = self.buckets[func_name][i]
 
-        data = {
-            "version" : "WiredTiger 10.0.0",
-            "localTime": current_time,
-            "funcName": func_name,
-            "wiredTigerEBPF" : latency_data
-        }
+        json_data = {}
+        json_data["version"] = "WiredTiger 10.0.0: (March 18, 2020)"
+        json_data["localTime"] = datetime.utcnow().isoformat()[:-3]+"Z"
+        json_data["wiredTigerEBPF"] = {}
+        json_data["wiredTigerEBPF"]["funcName"] = func_name
+        json_data["wiredTigerEBPF"]["funcLatencies"] = latency_data
 
-        self.latency_out.write(str(data))
+        json_txt = json.dumps(json_data)
+        self.latency_out.write(json_txt)
         self.latency_out.write('\n')
 
     def log_event(self, cpu, data, size):
