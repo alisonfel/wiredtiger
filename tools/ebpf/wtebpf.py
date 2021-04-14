@@ -2,6 +2,7 @@
 
 from __future__ import print_function
 from bcc import BPF
+from frequency import frequency_thread
 import argparse
 import threading, queue
 import logging, time
@@ -18,14 +19,7 @@ args = parser.parse_args()
 
 supported_stats = ['frequency','latency','stack']
 
-def frequency_thread(functions, lib, event):
-    # {"version":"WiredTiger 10.0.0","localTime":"2021-04-09T02:41:26.000Z","wiredTigerEBPF":{blah}}
-    print("Starting frequency stat thread for functions [%s]" % functions)
-    while not event.is_set():
-       time.sleep(1)
-    print("frequency stat thread exiting")
-
-def latency_thread(functions, lib, event):
+def latency_thread(functions, wt_lib, event):
     print("Starting latency stat thread for functions [%s]" % functions)
     while not event.is_set():
        time.sleep(1)
