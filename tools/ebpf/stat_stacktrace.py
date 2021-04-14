@@ -11,7 +11,7 @@ min_duration_ns = 10000
 time_multiplier = 1000000 # ms
 
 class StackTrace():
-    def __init__(self, wt_lib, functions, bpf_lock):
+    def __init__(self, wt_lib, functions):
         self.functions = functions
         self.traces = collections.OrderedDict()
         self.traces_count = {}
@@ -27,8 +27,7 @@ class StackTrace():
             }
             """ % (i, i)
         bpf_text = bpf_text.replace('DURATION_NS', str(min_duration_ns))
-        with bpf_lock:
-            self.b = BPF(text=bpf_text, cflags=["-include","ebpf_c/include/asm_redef.h"])
+        self.b = BPF(text=bpf_text, cflags=["-include","ebpf_c/include/asm_redef.h"])
 
         # Initialise our function probes
         for i, func in enumerate(functions):
@@ -84,6 +83,6 @@ class StackTrace():
             self.b.perf_buffer_poll(timeout=1)
         self.stack_out.close()
 
-def stackTraceThread(functions, wt_lib, exit_event, bpf_lock):
-    stackTracer = StackTrace(wt_lib, functions, bpf_lock)
+def stackTraceThread(functions, wt_lib, exit_event):
+    stackTracer = StackTrace(wt_lib, functions)
     stackTracer.enter_trace(exit_event)

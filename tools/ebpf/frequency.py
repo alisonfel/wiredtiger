@@ -67,14 +67,15 @@ def _construct_json_obj(bpf, functions):
 
     return json_obj
 
-def frequency_thread(functions, wt_lib, event, bpf_lock):
+def frequency_thread(functions, wt_lib, event):
     assert(isinstance(functions, list))
     assert(isinstance(wt_lib, str))
     assert(isinstance(event, threading.Event))
 
     bpf_text = _generate_bpf_source(functions)
-    with bpf_lock:
-        b = BPF(text=bpf_text)
+
+    b = BPF(text=bpf_text)
+
     # Initialise the array to 0 before we start counting.
     _clear_count_array(b, len(functions))
 

@@ -19,7 +19,7 @@ args = parser.parse_args()
 
 supported_stats = ['frequency','latency','stack']
 
-def latency_thread(functions, wt_lib, event, bpf_lock):
+def latency_thread(functions, wt_lib, event):
     print("Starting latency stat thread for functions [%s]" % functions)
     while not event.is_set():
        time.sleep(1)
@@ -51,7 +51,6 @@ for func in args.functions:
 
 stat_threads = []
 exit_event = threading.Event()
-bpf_lock = threading.Lock()
 for stat,functions in stat_config.items():
     target_function = None
     if stat == 'frequency':
@@ -60,7 +59,7 @@ for stat,functions in stat_config.items():
         target_function = latency_thread
     else:
         target_function = stat_stacktrace.stackTraceThread
-    stat_thread = threading.Thread(target=target_function, args=(functions,args.wt_lib,exit_event,bpf_lock,))
+    stat_thread = threading.Thread(target=target_function, args=(functions,args.wt_lib,exit_event,))
     stat_threads.append(stat_thread)
     stat_thread.start()
 
