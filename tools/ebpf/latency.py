@@ -195,5 +195,5 @@ def calculate_latencies(function_pattern):
             export_to_json(function_pattern, latency_counts, latency_bucket_labels, avg, total)
             exit()
 
-function_string = "__wt_open_cursor"
-calculate_latencies(function_string)
+#function_string = "__wt_open_cursor"
+#calculate_latencies(function_string)
