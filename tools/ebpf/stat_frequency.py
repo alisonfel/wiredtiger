@@ -3,7 +3,7 @@
 from __future__ import print_function
 from bcc import BPF
 from time import sleep, strftime
-import datetime, json, threading
+import datetime, json, os, threading
 
 # tetsuo-cpp: The approach is heavily based off a program already in the BCC repo.
 # Use this: https://github.com/iovisor/bcc/blob/master/tools/funccount.py
@@ -67,6 +67,12 @@ def _construct_json_obj(bpf, functions):
 
     return json_obj
 
+def _create_stat_file_path():
+    script_dir = os.path.dirname(__file__)
+    frequency_filename = script_dir + "/stats/frequency.stat"
+    os.makedirs(os.path.dirname(frequency_filename), exist_ok=True)
+    return frequency_filename
+
 def frequencyThread(functions, wt_lib, event, sock):
     assert(isinstance(functions, list))
     assert(isinstance(wt_lib, str))
@@ -86,19 +92,18 @@ def frequencyThread(functions, wt_lib, event, sock):
             sym=f,
             fn_name=_get_probe_name(f))
 
-    # We should expose these as options at some point.
-    stat_file_name = "frequency.stat"
+    stat_file_path = _create_stat_file_path()
     interval = 1
 
-    stat_file = open(stat_file_name, "w")
+    stat_file = open(stat_file_path, "w")
 
     # Loop and dump the stats as JSON every X seconds.
     while not event.is_set():
         json_obj = _construct_json_obj(b, functions)
         json_txt = json.dumps(json_obj)
-        sock.send(json_txt.encode())
         stat_file.write(json_txt)
         stat_file.write("\n")
+        sock.send(json_txt.encode())
         sleep(interval)
 
     stat_file.close()
