@@ -193,7 +193,19 @@ setInterval(function() {
 topleft.on('keypress', function(ch, key) {
     if (key.name == 'right') {
         topright.focus();
+    } else if (key.name == 'down' || key.name == 'j' || key.name == 'up' || key.name == 'k') {
+        const wtFunction = functionList[topleft.selected];
+        var counter = 0;
+        for (const [k, v] of Object.entries(statConfig[wtFunction])) {
+            if (v) {
+                topright.items[counter].setContent(`*${k}`);
+            } else {
+                topright.items[counter].setContent(k);
+            }
+            counter++;
+        }
     }
+    screen.render();
 });
 
 topright.on('keypress', function(ch, key) {
@@ -206,12 +218,25 @@ topright.on('keypress', function(ch, key) {
 
 topright.on('select', function(item, select) {
     const stat = statList[topright.selected];
-    const wtFunction = topleft.items[topleft.selected].getText();
+    const wtFunction = functionList[topleft.selected];
     statConfig[wtFunction][stat] = !statConfig[wtFunction][stat];
     if (statConfig[wtFunction][stat]) {
         topright.items[topright.selected].setContent(`*${stat}`);
     } else {
         topright.items[topright.selected].setContent(stat);
+    }
+    const functionStats = statConfig[wtFunction];
+    var hasStat = false;
+    for (const [k, v] of Object.entries(functionStats)) {
+        if (v) {
+            hasStat = true;
+            break;
+        }
+    }
+    if (hasStat) {
+        topleft.items[topleft.selected].setContent(`*${wtFunction}`);
+    } else {
+        topleft.items[topleft.selected].setContent(wtFunction);
     }
     screen.render();
 });
@@ -219,8 +244,6 @@ topright.on('select', function(item, select) {
 topleft.focus();
 
 screen.key('C-q', function() {
-  topright.kill();
-  bottomright.kill();
   return screen.destroy();
 });
 
