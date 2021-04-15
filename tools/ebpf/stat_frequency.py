@@ -96,6 +96,7 @@ def frequencyThread(functions, wt_lib, event, sock):
     while not event.is_set():
         json_obj = _construct_json_obj(b, functions)
         json_txt = json.dumps(json_obj)
+        sock.send(json_txt.encode())
         stat_file.write(json_txt)
         stat_file.write("\n")
         sleep(interval)
