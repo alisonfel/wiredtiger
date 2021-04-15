@@ -95,26 +95,33 @@ var prompt = blessed.prompt({
   hidden: true
 });
 
-var topright = blessed.terminal({
-  parent: screen,
-  cursor: 'block',
-  cursorBlink: true,
-  screenKeys: false,
-  label: ' multiplex.js ',
+
+var topright = blessed.list({
+    parent: screen,
+    keys: true,
+    vi: true,
+  label: ' Statistics',
   left: '50%',
   top: 0,
   width: '50%',
   height: '15%',
-  border: 'line',
-  style: {
-    fg: 'red',
-    bg: 'black',
-    focus: {
-      border: {
-        fg: 'green'
-      }
-    }
-  }
+    border: 'line',
+    items: [
+        'latency',
+        'frequency',
+        'stack'
+    ],
+    style: {
+        item: {
+            hover: {
+                bg: 'blue'
+            }
+        },
+        selected: {
+            bg: 'blue',
+            bold: true
+        },
+    },
 });
 
 var bottomright = blessed.log({
@@ -168,6 +175,20 @@ setInterval(function() {
     screen.render();
   });
   term.on('click', term.focus.bind(term));
+});
+
+topleft.on('keypress', function(ch, key) {
+    if (key.name == 'right') {
+        topright.focus();
+    }
+});
+
+topright.on('keypress', function(ch, key) {
+    if (key.name == 'left') {
+        topleft.focus();
+    } else if (key.name == 'space') {
+        // TODO: Add more stuff lol.
+    }
 });
 
 topleft.focus();
