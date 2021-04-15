@@ -16,20 +16,28 @@ const {spawnSync} = require('child_process');
 
 var statConfig = {};
 
+const statList = [
+        'latency',
+        'frequency',
+        'stack'
+];
+
+const functionList = findSymbols();
+
 function findSymbols() {
     const findSymbolsExec = spawnSync('python3', [
         '../find_symbols.py', '-l',
         '/home/alexc/work/wiredtiger/build_posix/.libs/libwiredtiger.so']);
     const functionTxt = findSymbolsExec.stdout.toString();
-    var functionList = functionTxt.split('\n');
-    functionList.forEach(function(f) {
+    var wtFunctions = functionTxt.split('\n');
+    wtFunctions.forEach(function(f) {
         statConfig[f] = {
             'latency': false,
             'frequency': false,
             'stack': false,
         };
     });
-    return functionList;
+    return wtFunctions;
 }
 
 screen = blessed.screen({
@@ -61,7 +69,7 @@ var topleft = blessed.list({
   },
   tags: true,
   invertSelected: false,
-    items: findSymbols(),
+    items: functionList,
   scrollbar: {
     ch: ' ',
     track: {
@@ -115,11 +123,7 @@ var topright = blessed.list({
   width: '50%',
   height: '15%',
     border: 'line',
-    items: [
-        'latency',
-        'frequency',
-        'stack'
-    ],
+    items: statList,
     style: {
         item: {
             hover: {
@@ -198,6 +202,18 @@ topright.on('keypress', function(ch, key) {
     } else if (key.name == 'space') {
         // TODO: Add more stuff lol.
     }
+});
+
+topright.on('select', function(item, select) {
+    const stat = statList[topright.selected];
+    const wtFunction = topleft.items[topleft.selected].getText();
+    statConfig[wtFunction][stat] = !statConfig[wtFunction][stat];
+    if (statConfig[wtFunction][stat]) {
+        topright.items[topright.selected].setContent(`*${stat}`);
+    } else {
+        topright.items[topright.selected].setContent(stat);
+    }
+    screen.render();
 });
 
 topleft.focus();
