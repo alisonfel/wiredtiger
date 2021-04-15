@@ -1,36 +1,36 @@
 #!/usr/bin/env node
 
-/**
- * multiplex.js
- * https://github.com/chjj/blessed
- * Copyright (c) 2013-2015, Christopher Jeffrey (MIT License)
- * A terminal multiplexer created by blessed.
- */
-
-process.title = 'multiplex.js';
+process.title = 'wttrace';
 
 var blessed = require('blessed')
 , screen;
-
 var net = require('net');
 var udp = require('dgram');
-
+var path = require('path');
+const { Command } = require('commander');
 const {spawnSync, spawn} = require('child_process');
 
-var statConfig = {};
+const program = new Command();
+program.option('-l, --library <path>', 'Path to wiredtiger library');
+program.parse(process.argv);
 
+if (program.opts().library === undefined) {
+  console.log('Usage: wttrace --library <path>');
+  process.exit(1);
+}
+const wtLibraryPath = path.resolve(program.opts().library)
+
+var statConfig = {};
 const statList = [
         'latency',
         'frequency',
         'stack'
 ];
-
 const functionList = findSymbols();
 
 function findSymbols() {
     const findSymbolsExec = spawnSync('python3', [
-        '../find_symbols.py', '-l',
-        '/home/alexc/work/wiredtiger/build_posix/.libs/libwiredtiger.so']);
+        '../find_symbols.py', '-l', wtLibraryPath ]);
     const functionTxt = findSymbolsExec.stdout.toString();
     var wtFunctions = functionTxt.split('\n');
     wtFunctions.forEach(function(f) {
@@ -54,8 +54,7 @@ function execEbpf(stat) {
         return null;
     }
     const spawnArgs = [
-        '../wtebpf.py', '-l',
-        '/home/alexc/work/wiredtiger/build_posix/.libs/libwiredtiger.so',
+        '../wtebpf.py', '-l', wtLibraryPath,
         '-a', '127.0.0.1', '-p', '8080', '-s', stat].concat(statFunctions);
     const runEbpf = spawn('python3', spawnArgs);
     return runEbpf;

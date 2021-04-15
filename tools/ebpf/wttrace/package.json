@@ -8,6 +8,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "commander": "^7.2.0",
     "pty.js": "^0.3.1",
     "term.js": "0.0.7"
   },
