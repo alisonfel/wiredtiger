@@ -9,6 +9,7 @@ import json, collections, time
 # Minimum latency threshold required to report stack
 min_duration_ns = 10000
 time_multiplier = 1000000 # ms
+stack_log_interval = 1 # 1 seconds
 
 class StackTrace():
     def __init__(self, wt_lib, functions):
@@ -17,7 +18,8 @@ class StackTrace():
         self.traces_count = {}
         # Initialise BPF program
         bpf_text = ""
-        with open('ebpf_c/stack_ebpf.c') as f:
+        script_dir = os.path.dirname(__file__)
+        with open(script_dir + '/ebpf_c/stack_ebpf.c') as f:
             bpf_text = f.read()
 
         for i in range(len(functions)):
@@ -27,7 +29,7 @@ class StackTrace():
             }
             """ % (i, i)
         bpf_text = bpf_text.replace('DURATION_NS', str(min_duration_ns))
-        self.b = BPF(text=bpf_text, cflags=["-include","ebpf_c/include/asm_redef.h"])
+        self.b = BPF(text=bpf_text, cflags=["-include", script_dir + "/ebpf_c/include/asm_redef.h"])
 
         # Initialise our function probes
         for i, func in enumerate(functions):
@@ -35,7 +37,7 @@ class StackTrace():
             self.b.attach_uretprobe(name=wt_lib, sym=func, fn_name="trace_return")
 
         # Create our stack file
-        stack_filename = 'stats/stacktrace.stack'
+        stack_filename = script_dir + '/stats/stacktrace.stack'
         os.makedirs(os.path.dirname(stack_filename), exist_ok=True)
         self.stack_out = open(stack_filename,'w')
         self.stack_out.write('{}\n'.format('#format timestamp;count;stack-id'))
@@ -76,13 +78,31 @@ class StackTrace():
         event = self.b["events"].event(data)
         self.log_csv_stack_event(event)
 
-    def enter_trace(self, exit_event):
+    def log_trace_event(self, trace_log):
+        json_obj = {}
+        json_obj["localTime"] = datetime.utcnow().isoformat()[:-3] + "Z"
+        stats_obj = {}
+        json_obj["wiredTigerEBPF"] = {}
+        json_obj["wiredTigerEBPF"]["stacks"] = stats_obj
+        for stack_hash, stack_trace in self.traces.items():
+            trace_obj = {}
+            trace_obj["stackTrace"] = stack_trace
+            trace_obj["stackFrequency"] = self.traces_count[stack_hash]
+            stats_obj[stack_trace[0]] = trace_obj
+        json_trace = json.dumps(json_obj)
+        trace_log.send(json_trace.encode())
+
+    def enter_trace(self, exit_event, trace_log):
+        log_time = time.time()
         self.b["events"].open_perf_buffer(self.log_event, page_cnt=64)
         while not exit_event.is_set():
             # Periodically exit perf_buffer_poll (every ms to see if we need to exit)
             self.b.perf_buffer_poll(timeout=1)
+            if(time.time()-log_time >= stack_log_interval):
+                self.log_trace_event(trace_log)
+                log_time = time.time()
         self.stack_out.close()
 
 def stackTraceThread(functions, wt_lib, exit_event, sock):
     stackTracer = StackTrace(wt_lib, functions)
-    stackTracer.enter_trace(exit_event)
+    stackTracer.enter_trace(exit_event, sock)

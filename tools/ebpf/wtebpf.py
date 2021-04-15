@@ -2,7 +2,6 @@
 
 from __future__ import print_function
 from bcc import BPF
-from frequency import frequency_thread
 import argparse
 import threading, queue
 import logging, time

@@ -53,6 +53,7 @@ function execEbpf(stat) {
     if (statFunctions.length == 0) {
         return null;
     }
+    bottomright.log(`Tracing ${stat} stats for functions: ${statFunctions}`)
     const spawnArgs = [
         '../wtebpf.py', '-l', wtLibraryPath,
         '-a', '127.0.0.1', '-p', '8080', '-s', stat].concat(statFunctions);
