@@ -67,7 +67,7 @@ def _construct_json_obj(bpf, functions):
 
     return json_obj
 
-def frequency_thread(functions, wt_lib, event, sock):
+def frequencyThread(functions, wt_lib, event, sock):
     assert(isinstance(functions, list))
     assert(isinstance(wt_lib, str))
     assert(isinstance(event, threading.Event))

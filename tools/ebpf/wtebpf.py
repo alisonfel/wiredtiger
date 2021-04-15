@@ -6,8 +6,7 @@ from frequency import frequency_thread
 import argparse
 import threading, queue
 import logging, time
-import stat_latency
-import stat_stacktrace
+import stat_frequency, stat_latency, stat_stacktrace
 import socket
 
 parser = argparse.ArgumentParser(
@@ -26,7 +25,7 @@ args = parser.parse_args()
 exit_event = threading.Event()
 target_function = None
 if args.stat == 'frequency':
-    target_function = frequency_thread
+    target_function = stat_frequency.frequencyThread
 elif args.stat == 'latency':
     target_function = stat_latency.latencyTraceThread
 else:
