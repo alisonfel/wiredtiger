@@ -12,6 +12,8 @@ process.title = 'multiplex.js';
 var blessed = require('blessed')
 , screen;
 
+var net = require('net')
+
 const {spawnSync} = require('child_process');
 
 var statConfig = {};
@@ -170,13 +172,19 @@ var bottomright = blessed.log({
   }
 });
 
-setInterval(function() {
-  bottomright.log('Hello {#0fe1ab-fg}world{/}: {bold}%s{/bold}.', Date.now().toString(36));
-  if (Math.random() < 0.30) {
-    bottomright.log({foo:{bar:{baz:true}}});
-  }
-  screen.render();
-}, 1000).unref();
+// setInterval(function() {
+//   // bottomright.log('Hello {#0fe1ab-fg}world{/}: {bold}%s{/bold}.', Date.now().toString(36));
+//   if (Math.random() < 0.30) {
+//     bottomright.log({foo:{bar:{baz:true}}});
+//   }
+//   screen.render();
+// }, 1000).unref();
+
+net.createServer(function (socket) {
+    socket.on('data', function(data) {
+        bottomright.log(data.toString());
+    });
+}).listen(8080);
 
 [topleft, topright, bottomright].forEach(function(term) {
   term.enableDrag(function(mouse) {

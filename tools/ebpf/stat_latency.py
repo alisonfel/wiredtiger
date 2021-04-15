@@ -12,8 +12,8 @@ min_duration_ns = 10000
 nbuckets = 20
 
 latency_bucket_labels = ["0-1", "2-3", "4-7", "8-15", "16-31",
-                        "32-63", "64-127", "128-255", "256-511", "512-1023", 
-                        "1024-2047", "2048-4095", "4096-8191", "8192-16383", "16384-32767", 
+                        "32-63", "64-127", "128-255", "256-511", "512-1023",
+                        "1024-2047", "2048-4095", "4096-8191", "8192-16383", "16384-32767",
                         "32768-65535", "65536-131071", "131072-262143", "262144-524287", "524288+"]
 
 class LatencyTrace():
@@ -81,6 +81,6 @@ class LatencyTrace():
             self.b.perf_buffer_poll(timeout=1)
         self.latency_out.close()
 
-def latencyTraceThread(functions, wt_lib, exit_event):
+def latencyTraceThread(functions, wt_lib, exit_event, sock):
     latencyTracer = LatencyTrace(wt_lib, functions)
     latencyTracer.enter_trace(exit_event)

@@ -83,6 +83,6 @@ class StackTrace():
             self.b.perf_buffer_poll(timeout=1)
         self.stack_out.close()
 
-def stackTraceThread(functions, wt_lib, exit_event):
+def stackTraceThread(functions, wt_lib, exit_event, sock):
     stackTracer = StackTrace(wt_lib, functions)
     stackTracer.enter_trace(exit_event)
