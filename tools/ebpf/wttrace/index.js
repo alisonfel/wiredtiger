@@ -31,8 +31,10 @@ const functionList = findSymbols();
 function findSymbols() {
     const findSymbolsExec = spawnSync('python3', [
         '../find_symbols.py', '-l', wtLibraryPath ]);
-    const functionTxt = findSymbolsExec.stdout.toString();
+    let functionTxt = findSymbolsExec.stdout.toString();
+    functionTxt = functionTxt.trim();
     var wtFunctions = functionTxt.split('\n');
+    wtFunctions.sort();
     wtFunctions.forEach(function(f) {
         statConfig[f] = {
             'latency': false,
