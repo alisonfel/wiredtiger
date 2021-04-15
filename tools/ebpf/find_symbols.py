@@ -7,7 +7,7 @@ def find_symbols(wt_lib):
     user_functions = BPF.get_user_functions(
         wt_lib, str())
     for f in user_functions:
-        print(f)
+        print(f.decode('utf8'))
 
 parser = argparse.ArgumentParser(
     description="Find WiredTiger symbols with eBPF",

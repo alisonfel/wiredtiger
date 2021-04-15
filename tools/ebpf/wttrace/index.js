@@ -10,7 +10,27 @@
 process.title = 'multiplex.js';
 
 var blessed = require('blessed')
-  , screen;
+, screen;
+
+const {spawnSync} = require('child_process');
+
+var statConfig = {};
+
+function findSymbols() {
+    const findSymbolsExec = spawnSync('python3', [
+        '../find_symbols.py', '-l',
+        '/home/alexc/work/wiredtiger/build_posix/.libs/libwiredtiger.so']);
+    const functionTxt = findSymbolsExec.stdout.toString();
+    var functionList = functionTxt.split('\n');
+    functionList.forEach(function(f) {
+        statConfig[f] = {
+            'latency': false,
+            'frequency': false,
+            'stack': false,
+        };
+    });
+    return functionList;
+}
 
 screen = blessed.screen({
   smartCSR: true,
@@ -41,18 +61,7 @@ var topleft = blessed.list({
   },
   tags: true,
   invertSelected: false,
-  items: [
-    'one',
-    'two',
-    'three',
-    'four',
-    'five',
-    'six',
-    'seven',
-    'eight',
-    'nine',
-    'ten'
-  ],
+    items: findSymbols(),
   scrollbar: {
     ch: ' ',
     track: {
