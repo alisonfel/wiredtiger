@@ -12,9 +12,10 @@ process.title = 'multiplex.js';
 var blessed = require('blessed')
 , screen;
 
-var net = require('net')
+var net = require('net');
+var udp = require('dgram');
 
-const {spawnSync} = require('child_process');
+const {spawnSync, spawn} = require('child_process');
 
 var statConfig = {};
 
@@ -40,6 +41,24 @@ function findSymbols() {
         };
     });
     return wtFunctions;
+}
+
+function execEbpf(stat) {
+    var statFunctions = [];
+    for (const [k, v] of Object.entries(statConfig)) {
+        if (v[stat]) {
+            statFunctions.push(k);
+        }
+    }
+    if (statFunctions.length == 0) {
+        return null;
+    }
+    const spawnArgs = [
+        '../wtebpf.py', '-l',
+        '/home/alexc/work/wiredtiger/build_posix/.libs/libwiredtiger.so',
+        '-a', '127.0.0.1', '-p', '8080', '-s', stat].concat(statFunctions);
+    const runEbpf = spawn('python3', spawnArgs);
+    return runEbpf;
 }
 
 screen = blessed.screen({
@@ -125,7 +144,7 @@ var topright = blessed.list({
   width: '50%',
   height: '15%',
     border: 'line',
-    items: statList,
+    items: [].concat(statList),
     style: {
         item: {
             hover: {
@@ -172,19 +191,20 @@ var bottomright = blessed.log({
   }
 });
 
-// setInterval(function() {
-//   // bottomright.log('Hello {#0fe1ab-fg}world{/}: {bold}%s{/bold}.', Date.now().toString(36));
-//   if (Math.random() < 0.30) {
-//     bottomright.log({foo:{bar:{baz:true}}});
-//   }
-//   screen.render();
-// }, 1000).unref();
-
-net.createServer(function (socket) {
-    socket.on('data', function(data) {
-        bottomright.log(data.toString());
-    });
-}).listen(8080);
+var server = udp.createSocket('udp4');
+server.on('error', function(error) {
+    bottomright.log('error occured');
+    server.close();
+});
+server.on('message', function(msg, info) {
+    bottomright.log(msg.toString());
+});
+server.on('listening', function() {
+    const address = server.address();
+    bottomright.log('wttrace server is listening at address ' + address.address);
+    bottomright.log('wttrace server is listening at port ' + address.port);
+});
+server.bind(8080, 'localhost');
 
 [topleft, topright, bottomright].forEach(function(term) {
   term.enableDrag(function(mouse) {
@@ -251,13 +271,30 @@ topright.on('select', function(item, select) {
 
 topleft.focus();
 
+var pids = [];
+
 screen.key('C-q', function() {
+    for (const pid of pids) {
+        pid.kill('SIGINT');
+    }
   return screen.destroy();
 });
 
 screen.program.key('C-n', function() {
   screen.focusNext();
   screen.render();
+});
+
+screen.key('C-r', function() {
+    if (pids.length != 0) {
+        return;
+    }
+    for (const stat of statList) {
+        pid = execEbpf(stat);
+        if (pid != null) {
+            pids.push(pid);
+        }
+    }
 });
 
 screen.render();

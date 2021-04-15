@@ -32,9 +32,8 @@ elif args.stat == 'latency':
 else:
     target_function = stat_stacktrace.stackTraceThread
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.connect((args.address, args.port))
-sock.send(b"radish")
 
 stat_thread = threading.Thread(target=target_function, args=(args.functions,args.wt_lib,exit_event,sock,))
 stat_thread.start()
