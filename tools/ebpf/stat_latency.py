@@ -3,9 +3,9 @@
 from __future__ import print_function
 from bcc import BPF
 from datetime import datetime
+from time import sleep
 import threading, os
 import json
-
 import math
 
 min_duration_ns = 10000
@@ -20,6 +20,7 @@ class LatencyTrace():
     def __init__(self, wt_lib, functions):
         self.functions = functions
         self.buckets = {}
+        self.json_file_contents = ""
 
         bpf_text = ""
         with open('ebpf_c/stack_ebpf.c') as f:
@@ -67,8 +68,7 @@ class LatencyTrace():
         json_data["wiredTigerEBPF"]["funcLatencies"] = latency_data
 
         json_txt = json.dumps(json_data)
-        self.latency_out.write(json_txt)
-        self.latency_out.write('\n')
+        self.json_file_contents = self.json_file_contents + json_txt
 
     def log_event(self, cpu, data, size):
         event = self.b["events"].event(data)
@@ -79,6 +79,11 @@ class LatencyTrace():
         while not exit_event.is_set():
             # Periodically exit perf_buffer_poll (every ms to see if we need to exit)
             self.b.perf_buffer_poll(timeout=1)
+            self.latency_out.write(self.json_file_contents)
+            self.latency_out.write('\n')
+            print(self.json_file_contents)
+            sleep(1)
+
         self.latency_out.close()
 
 def latencyTraceThread(functions, wt_lib, exit_event, sock):
