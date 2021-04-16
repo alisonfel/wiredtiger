@@ -211,18 +211,6 @@ server.on('listening', function() {
 });
 server.bind(8080, 'localhost');
 
-[topleft, topright, bottomright].forEach(function(term) {
-  term.enableDrag(function(mouse) {
-    return !!mouse.ctrl;
-  });
-  term.on('title', function(title) {
-    screen.title = title;
-    term.setLabel(' ' + title + ' ');
-    screen.render();
-  });
-  term.on('click', term.focus.bind(term));
-});
-
 topleft.on('keypress', function(ch, key) {
     if (key.name == 'right') {
         topright.focus();
