@@ -81,18 +81,9 @@ var topleft = blessed.list({
   width: '50%',
   height: '100%',
   border: 'line',
-  style: {
-    fg: 'default',
-    bg: 'default',
-    focus: {
-      border: {
-        fg: 'green'
-      }
-    }
-  },
   tags: true,
   invertSelected: false,
-    items: functionList,
+  items: functionList,
   scrollbar: {
     ch: ' ',
     track: {
@@ -103,6 +94,13 @@ var topleft = blessed.list({
     }
   },
   style: {
+    fg: 'default',
+    bg: 'default',
+    focus: {
+      border: {
+        fg: 'green'
+      }
+    },
     item: {
       hover: {
         bg: 'blue'
@@ -137,9 +135,9 @@ var prompt = blessed.prompt({
 
 
 var topright = blessed.list({
-    parent: screen,
-    keys: true,
-    vi: true,
+  parent: screen,
+  keys: true,
+  vi: true,
   label: ' Statistics',
   left: '50%',
   top: 0,
@@ -148,7 +146,12 @@ var topright = blessed.list({
     border: 'line',
     items: [].concat(statList),
     style: {
-        item: {
+      focus: {
+        border: {
+          fg: 'green'
+        }
+      },
+      item: {
             hover: {
                 bg: 'blue'
             }
@@ -239,11 +242,9 @@ topleft.on('keypress', function(ch, key) {
 });
 
 topright.on('keypress', function(ch, key) {
-    if (key.name == 'left') {
-        topleft.focus();
-    } else if (key.name == 'space') {
-        // TODO: Add more stuff lol.
-    }
+  if (key.name == 'left') {
+    topleft.focus();
+  }
 });
 
 topright.on('select', function(item, select) {
@@ -276,15 +277,11 @@ topleft.focus();
 var pids = [];
 
 screen.key('C-q', function() {
-    for (const pid of pids) {
-        pid.kill('SIGINT');
-    }
+  for (const pid of pids) {
+      pid.kill('SIGINT');
+  }
+  server.close()
   return screen.destroy();
-});
-
-screen.program.key('C-n', function() {
-  screen.focusNext();
-  screen.render();
 });
 
 screen.key('C-r', function() {
