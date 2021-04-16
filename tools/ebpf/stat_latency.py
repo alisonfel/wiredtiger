@@ -7,6 +7,7 @@ from time import sleep
 import threading, os
 import json
 import math
+import time
 
 min_duration_ns = 10000
 nbuckets = 20
@@ -23,7 +24,8 @@ class LatencyTrace():
         self.json_file_contents = ""
 
         bpf_text = ""
-        with open('ebpf_c/stack_ebpf.c') as f:
+        script_dir = os.path.dirname(__file__)
+        with open(script_dir + '/ebpf_c/stack_ebpf.c') as f:
             bpf_text = f.read()
 
         for i in range(len(functions)):
@@ -33,7 +35,7 @@ class LatencyTrace():
             }
             """ % (i, i)
         bpf_text = bpf_text.replace('DURATION_NS', str(min_duration_ns))
-        self.b = BPF(text=bpf_text, cflags=["-include","ebpf_c/include/asm_redef.h"])
+        self.b = BPF(text=bpf_text, cflags=["-include", script_dir + "/ebpf_c/include/asm_redef.h"])
 
 
         for i, func in enumerate(functions):
@@ -42,7 +44,7 @@ class LatencyTrace():
             self.b.attach_uretprobe(name=wt_lib, sym=func, fn_name="trace_return")
 
         # Create our stack file
-        latency_filename = 'stats/latency.stat'
+        latency_filename = script_dir + '/stats/latency.stat'
         os.makedirs(os.path.dirname(latency_filename), exist_ok=True)
         self.latency_out = open(latency_filename,'w')
 
@@ -74,18 +76,19 @@ class LatencyTrace():
         event = self.b["events"].event(data)
         self.log_latency_event(event)
 
-    def enter_trace(self, exit_event):
+    def enter_trace(self, exit_event, sock):
+        log_time = time.time()
         self.b["events"].open_perf_buffer(self.log_event, page_cnt=64)
         while not exit_event.is_set():
             # Periodically exit perf_buffer_poll (every ms to see if we need to exit)
             self.b.perf_buffer_poll(timeout=1)
             self.latency_out.write(self.json_file_contents)
             self.latency_out.write('\n')
-            print(self.json_file_contents)
-            sleep(1)
-
+            if(time.time()-log_time >= 1):
+                sock.send(self.json_file_contents.encode())
+                log_time = time.time()
         self.latency_out.close()
 
 def latencyTraceThread(functions, wt_lib, exit_event, sock):
     latencyTracer = LatencyTrace(wt_lib, functions)
-    latencyTracer.enter_trace(exit_event)
+    latencyTracer.enter_trace(exit_event, sock)
