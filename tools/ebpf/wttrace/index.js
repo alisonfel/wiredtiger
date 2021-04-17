@@ -9,8 +9,10 @@ var udp = require('dgram');
 var path = require('path');
 const { Command } = require('commander');
 const {spawnSync, spawn} = require('child_process');
-
+const { lstatSync, readdirSync } = require('fs')
+const { join } = require('path')
 const program = new Command();
+
 program.option('-l, --library <path>', 'Path to wiredtiger library');
 program.parse(process.argv);
 
@@ -26,7 +28,9 @@ const statList = [
         'frequency',
         'stack'
 ];
+var customTracerConfig = {};
 const functionList = findSymbols();
+const tracerList = findCustomTracers()
 
 function findSymbols() {
     const findSymbolsExec = spawnSync('python3', [
@@ -63,6 +67,28 @@ function execEbpf(stat) {
     return runEbpf;
 }
 
+function execEbpfTracer(tracer) {
+    bottomright.log(`Running custom tracer ${tracer}`)
+    const spawnArgs = [
+        '../wtebpf.py', '-l', wtLibraryPath,
+        '-a', '127.0.0.1', '-p', '8080', '-c', tracer];
+    const runEbpf = spawn('python3', spawnArgs);
+    return runEbpf;
+}
+
+function findCustomTracers() {
+  const isDirectory = source => lstatSync(source).isDirectory();
+  const getDirectories = source =>
+    readdirSync(source).map(name => join(source, name))
+      .filter(isDirectory)
+      .map(name => path.basename(name));
+  tracers = getDirectories("../custom_wt_ebpf");
+  tracers.forEach(function(t) {
+      customTracerConfig[t] = false;
+  })
+  return tracers;
+}
+
 screen = blessed.screen({
   smartCSR: true,
   log: process.env.HOME + '/blessed-terminal.log',
@@ -79,7 +105,7 @@ var topleft = blessed.list({
   left: 0,
   top: 0,
   width: '50%',
-  height: '100%',
+  height: '80%',
   border: 'line',
   tags: true,
   invertSelected: false,
@@ -119,6 +145,48 @@ var topleft = blessed.list({
   }
 });
 
+var bottomleft = blessed.list({
+  parent: screen,
+  keys: true,
+  vi: true,
+  label: 'Custom Tracers',
+  left: 0,
+  top: '80%',
+  width: '50%',
+  height: '20%',
+  border: 'line',
+  tags: true,
+  invertSelected: false,
+  items: [].concat(tracerList),
+  scrollbar: {
+    ch: ' ',
+    track: {
+      bg: 'yellow'
+    },
+    style: {
+      inverse: true
+    }
+  },
+  style: {
+    fg: 'default',
+    bg: 'default',
+    focus: {
+      border: {
+        fg: 'green'
+      }
+    },
+    item: {
+      hover: {
+        bg: 'blue'
+      }
+    },
+    selected: {
+      bg: 'blue',
+      bold: true
+    },
+  }
+});
+
 var prompt = blessed.prompt({
   parent: topleft,
   top: 'center',
@@ -142,7 +210,7 @@ var topright = blessed.list({
   left: '50%',
   top: 0,
   width: '50%',
-  height: '15%',
+  height: '10%',
     border: 'line',
     items: [].concat(statList),
     style: {
@@ -167,9 +235,9 @@ var bottomright = blessed.log({
   parent: screen,
   label: ' Trace Output ',
   left: '50%',
-  top: '15%',
+  top: '10%',
   width: '50%',
-  height: '86%',
+  height: '91%',
   border: 'line',
   style: {
     fg: 'default',
@@ -260,6 +328,17 @@ topright.on('select', function(item, select) {
     screen.render();
 });
 
+bottomleft.on('select', function(item, select) {
+    const tracer = tracerList[bottomleft.selected];
+    customTracerConfig[tracer] = !customTracerConfig[tracer];
+    if (customTracerConfig[tracer]) {
+        bottomleft.items[bottomleft.selected].setContent(`*${tracer}`);
+    } else {
+        bottomleft.items[bottomleft.selected].setContent(tracer);
+    }
+    screen.render();
+});
+
 topleft.focus();
 
 var pids = [];
@@ -272,12 +351,29 @@ screen.key('C-q', function() {
   return screen.destroy();
 });
 
+screen.key('C-n', function() {
+  if(screen.focused == topleft) {
+    bottomleft.focus();
+  } else {
+    topleft.focus()
+  }
+});
+
 screen.key('C-r', function() {
     if (pids.length != 0) {
         return;
     }
     for (const stat of statList) {
         pid = execEbpf(stat);
+        if (pid != null) {
+            pids.push(pid);
+        }
+    }
+    for (const tracer of tracerList) {
+        if(!customTracerConfig[tracer]) {
+          continue;
+        }
+        pid = execEbpfTracer(tracer);
         if (pid != null) {
             pids.push(pid);
         }
