@@ -51,7 +51,7 @@ class MemTrace():
         alloc_info = {}
         allocs = self.b["allocs"]
         stack_traces = self.b["stack_traces"]
-        for address, info in sorted(allocs.items(), key=lambda a: a[1].size):
+        for address, info in allocs.items():
             if BPF.monotonic_time() - min_age_ns < info.timestamp_ns:
                 continue
             if info.stack_id < 0:
@@ -83,8 +83,8 @@ class MemTrace():
     def enter_trace(self, exit_event, trace_log):
         log_time = time.time()
         while not exit_event.is_set():
-            time.sleep(mem_log_interval)
             self.log_outstanding_allocations(trace_log)
+            time.sleep(mem_log_interval)
 
 def customTraceThread(functions, wt_lib, exit_event, sock):
     memTracer = MemTrace(wt_lib, functions)
